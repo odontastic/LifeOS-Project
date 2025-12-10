@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="created" content="2025-07-22T20:27:00">
+    <title>Scholarship Success Plan with AI Features (Revised)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Created: July 22, 2025 at 8:27 PM -->
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The application is structured as a chronological, single-page guide, moving from foundational strategy to an interactive timeline and actionable resources. This step-by-step flow (Foundations -> Search -> Applications -> Timeline -> Tools) is designed to walk a parent through the complex scholarship process in a logical, manageable sequence. It avoids overwhelming the user by presenting information in digestible phases. Key interactions include clickable cards for exploring scholarship types and a hover-able timeline chart to visualize the entire senior year at a glance. This task-oriented structure was chosen because the user's request is fundamentally a project to be managed, and this layout serves as a project plan. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: User needs a timeline for senior year. -> Goal: Show change/deadlines over time. -> Viz/Presentation: Interactive Horizontal Bar Chart (Gantt-style). -> Interaction: Hovering over bars reveals monthly tasks via tooltips. -> Justification: A visual Gantt chart is the most intuitive way to represent a year-long project with overlapping phases. It provides a clear, at-a-glance overview of what to do and when. -> Library/Method: Chart.js (Canvas).
+        - Report Info: User needs to know where to find scholarships. -> Goal: Organize and inform. -> Viz/Presentation: Grid of styled, clickable cards. -> Interaction: Clicking a card reveals detailed information and tailored advice for that category. -> Justification: Cards are visually appealing and allow the user to self-select the information they want to explore, reducing initial cognitive load. -> Library/Method: HTML/CSS (Tailwind) + Vanilla JS for toggling content.
+        - Report Info: User needs a way to track applications. -> Goal: Provide a practical tool. -> Viz/Presentation: A "Download CSV" button. -> Interaction: Clicking the button generates and downloads a pre-formatted spreadsheet template. -> Justification: A downloadable, editable file is far more practical for a user than a static table on a webpage. -> Library/Method: Vanilla JS to create and trigger a file download.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .section-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .section-card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .section-card.is-open .section-card-content {
+            max-height: 1000px; /* Large enough to fit content */
+        }
+        .section-card.is-open .chevron {
+            transform: rotate(180deg);
+        }
+        .gemini-loader {
+            display: none;
+        }
+        .gemini-result-card {
+            background-color: #eef2ff; /* indigo-50 */
+            border-left: 4px solid #4f46e5; /* indigo-600 */
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-slate-800">Scholarship Success Plan (Revised)</h1>
+            <div class="hidden md:flex space-x-6">
+                <a href="#phase1" class="text-slate-600 hover:text-blue-600">Foundations</a>
+                <a href="#phase2" class="text-slate-600 hover:text-blue-600">The Search</a>
+                <a href="#phase3" class="text-slate-600 hover:text-blue-600">Applications</a>
+                <a href="#phase4" class="text-slate-600 hover:text-blue-600">Timeline</a>
+                <a href="#phase5" class="text-slate-600 hover:text-blue-600">Tools</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <section id="intro" class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-slate-800 mb-4">Mastering the Merit Aid Game</h2>
+            <p class="max-w-3xl mx-auto text-lg text-slate-600">Welcome! This guide is tailored for high-achieving students like your son. Since your family income is high, our focus will be entirely on <strong class="font-semibold text-slate-800">merit-based scholarships</strong>. These are awarded for academic excellence, leadership, talent, and unique attributes—like his STEM focus and Naval Sea Cadet service—not financial need. Think of this not as asking for help, but as colleges competing for a top student.</p>
+        </section>
+
+        <!-- Phase 1: Foundation & Strategy -->
+        <section id="phase1" class="mb-16">
+            <div class="text-center mb-8">
+                <span class="text-sm font-semibold text-blue-600 bg-blue-100 py-1 px-3 rounded-full">Phase 1</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">Foundation & Strategy</h3>
+                <p class="max-w-2xl mx-auto mt-2 text-slate-600">Before the search begins, we need to get organized. This phase is about building a "brag sheet," understanding the landscape, and creating a system to manage the process. This preparation is the single most important step to maximizing success and minimizing stress.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="font-bold text-lg text-slate-800 mb-2">Build the "Scholarship Profile"</h4>
+                    <p class="text-slate-600">Compile a master document with everything a scholarship committee might want to know. This saves immense time later. Include: GPA (weighted/unweighted), class rank, standardized test scores (if applicable), a comprehensive list of extracurriculars with dates and leadership roles, honors, awards, volunteer hours, and work experience. For your son, detail his specific projects in the BST Academy and his rank, training, and responsibilities in the NSCC.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="font-bold text-lg text-slate-800 mb-2">Understand Aid Types</h4>
+                    <p class="text-slate-600"><strong class="block text-slate-700">Institutional Aid:</strong> Money from the colleges themselves. This is the largest source of merit aid. Private universities are often more generous than publics. <strong class="block text-slate-700 mt-2">Private/External Scholarships:</strong> Money from companies, non-profits, and community groups. These are smaller but can add up significantly.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="font-bold text-lg text-slate-800 mb-2">The FAFSA & CSS Profile</h4>
+                    <p class="text-slate-600">Even with a high income, file the FAFSA (Free Application for Federal Student Aid). Why? Many universities, including prestigious private ones, <strong class="font-semibold">require the FAFSA to be on file</strong> before they will consider a student for any aid, including their own institutional merit scholarships. The CSS Profile is a more detailed form required by about 400, mostly private, colleges for the same reason. Check each college's financial aid website for their requirements.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Phase 2: The Big Search -->
+        <section id="phase2" class="mb-16">
+            <div class="text-center mb-8">
+                <span class="text-sm font-semibold text-blue-600 bg-blue-100 py-1 px-3 rounded-full">Phase 2</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">The Big Search: Where to Look</h3>
+                 <p class="max-w-2xl mx-auto mt-2 text-slate-600">Now we hunt for opportunities. The key is to be targeted. Your son's profile is a powerful filter. We will focus on categories where he has a distinct advantage. Click each card below to explore the strategy for that category.</p>
+            </div>
+            
+            <!-- NEW: Gemini Scholarship Discovery Assistant -->
+            <div class="bg-white p-6 rounded-lg shadow mb-12">
+                <h4 class="text-xl font-bold text-slate-800 mb-2 flex items-center">
+                    <span class="text-2xl mr-2">✨</span> Scholarship Discovery Assistant
+                </h4>
+                <p class="text-slate-600 mb-4">Go beyond broad categories. Describe one of your son's specific projects, skills, or interests below, and our AI assistant will suggest niche scholarship types to search for.</p>
+                <div class="space-y-4">
+                    <textarea id="discovery-prompt" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="3" placeholder="e.g., 'Led a team in a robotics competition to build an autonomous rover' or 'Conducted a research project on the effects of local pollutants on plant growth.'"></textarea>
+                    <button id="discovery-button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                        Find Niche Scholarship Types
+                    </button>
+                    <div id="discovery-loader" class="gemini-loader flex justify-center items-center p-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700"></div>
+                        <p class="ml-3 text-slate-600">Thinking...</p>
+                    </div>
+                    <div id="discovery-result" class="hidden"></div>
+                </div>
+            </div>
+
+            <div id="scholarship-categories" class="grid md:grid-cols-2 gap-6">
+                <!-- Existing cards from before -->
+                <div class="section-card bg-white rounded-lg shadow overflow-hidden">
+                    <button class="w-full text-left p-6 flex justify-between items-center">
+                        <h4 class="text-xl font-bold text-slate-800">1. Institutional Scholarships</h4>
+                        <span class="chevron text-2xl text-blue-600 transform transition-transform duration-300">&#9660;</span>
+                    </button>
+                    <div class="section-card-content px-6 pb-6">
+                        <p class="text-slate-600">This is your #1 target. These are scholarships offered directly by the colleges. Private universities with large endowments often give significant merit aid to attract top students (like your son) to boost their academic profile. Use each college's "Net Price Calculator" on their website to get an estimate of potential merit aid. These calculators are often surprisingly accurate. Research their "automatic" scholarships based on GPA/test scores and their competitive scholarships that require separate applications.</p>
+                    </div>
+                </div>
+                <div class="section-card bg-white rounded-lg shadow overflow-hidden">
+                    <button class="w-full text-left p-6 flex justify-between items-center">
+                        <h4 class="text-xl font-bold text-slate-800">2. Military-Affiliated & NSCC</h4>
+                        <span class="chevron text-2xl text-blue-600 transform transition-transform duration-300">&#9660;</span>
+                    </button>
+                    <div class="section-card-content px-6 pb-6">
+                        <p class="text-slate-600">His NSCC service is a huge differentiator. <br> &#8226; <strong class="text-slate-700">ROTC Scholarships:</strong> The biggest source of military-affiliated aid. These are highly competitive scholarships that pay for tuition, fees, and a stipend in exchange for military service after graduation. The application window is during the summer before senior year and early fall. <br> &#8226; <strong class="text-slate-700">Naval Sea Cadet Corps Scholarships:</strong> The NSCC itself offers scholarships for active cadets. Check their national website for details. <br> &#8226; <strong class="text-slate-700">Other Organizations:</strong> Look at the Navy League of the United States, Surface Navy Association (SNA), and other veteran service organizations (VFW, American Legion) which all offer scholarships, often with a preference for cadets.</p>
+                    </div>
+                </div>
+                <div class="section-card bg-white rounded-lg shadow overflow-hidden">
+                    <button class="w-full text-left p-6 flex justify-between items-center">
+                        <h4 class="text-xl font-bold text-slate-800">3. STEM & Biomedical</h4>
+                        <span class="chevron text-2xl text-blue-600 transform transition-transform duration-300">&#9660;</span>
+                    </button>
+                    <div class="section-card-content px-6 pb-6">
+                        <p class="text-slate-600">His Biomedical Science & Technology focus opens many doors. Many corporations are desperate for STEM talent and fund scholarships to create a pipeline. Search for scholarships from: <br> &#8226; Large pharmaceutical companies (e.g., Johnson & Johnson, Pfizer, Merck). <br> &#8226; Medical device companies. <br> &#8226; Tech companies with biotech divisions (e.g., Google's Verily, Apple Health).<br> &#8226; Professional organizations like the Society of Women Engineers (they have awards for men too!), National Society of Professional Engineers, etc.</p>
+                    </div>
+                </div>
+                <div class="section-card bg-white rounded-lg shadow overflow-hidden">
+                    <button class="w-full text-left p-6 flex justify-between items-center">
+                        <h4 class="text-xl font-bold text-slate-800">4. Local & Community</h4>
+                        <span class="chevron text-2xl text-blue-600 transform transition-transform duration-300">&#9660;</span>
+                    </button>
+                    <div class="section-card-content px-6 pb-6">
+                        <p class="text-slate-600">Don't overlook scholarships with a smaller applicant pool. These can be easier to win. Check with: <br> &#8226; Chino Valley Unified School District - they often have a list of local awards.<br> &#8226; Chino High School's counseling office or the BST Academy coordinator.<br> &#8226; The City of Chino Hills government website.<br> &#8226; Local community groups (Rotary Club, Kiwanis, Lions Club).<br> &#8226; Parents' employers. Many large companies offer scholarships to children of employees.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Phase 3: Application Blitz -->
+        <section id="phase3" class="mb-16">
+            <div class="text-center mb-8">
+                <span class="text-sm font-semibold text-blue-600 bg-blue-100 py-1 px-3 rounded-full">Phase 3</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">The Application Blitz</h3>
+                <p class="max-w-2xl mx-auto mt-2 text-slate-600">Quality over quantity is key. A well-crafted application for a targeted scholarship is better than a dozen rushed ones. This is where the "Scholarship Profile" from Phase 1 pays off.</p>
+            </div>
+            <div class="space-y-6">
+                 <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="font-bold text-lg text-slate-800 mb-2">The "Recycle & Tailor" Essay Strategy</h4>
+                    <p class="text-slate-600">Your son will likely need a few core essays: one about his leadership (NSCC), one about his academic passion (STEM/Biomedical), and one about a challenge he overcame. Write strong, compelling master versions of these. Then, for each scholarship, <strong class="font-semibold">tailor the introduction and conclusion</strong> to directly address the specific prompt and the organization's mission. Never just copy and paste. Show them why he is the perfect fit for *their* award.</p>
+                    
+                    <!-- NEW: Gemini Essay Idea Generator -->
+                    <div class="mt-6 border-t border-slate-200 pt-6">
+                         <h5 class="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                            <span class="text-2xl mr-2">✨</span> AI Essay Idea Generator
+                        </h5>
+                        <p class="text-slate-600 mb-4">Stuck on an essay? Paste the scholarship's mission or essay prompt below. Our AI assistant will generate a few unique angles connecting your son's profile (STEM + NSCC) to the prompt.</p>
+                        <div class="space-y-4">
+                            <textarea id="essay-prompt" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="3" placeholder="e.g., 'Describe a time you demonstrated leadership to solve a community problem.' or 'Our foundation supports future innovators in healthcare.'"></textarea>
+                            <button id="essay-button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                                Generate Essay Ideas
+                            </button>
+                            <div id="essay-loader" class="gemini-loader flex justify-center items-center p-4">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700"></div>
+                                <p class="ml-3 text-slate-600">Brainstorming...</p>
+                            </div>
+                            <div id="essay-result" class="hidden"></div>
+                        </div>
+                    </div>
+                 </div>
+                 <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="font-bold text-lg text-slate-800 mb-2">Letters of Recommendation</h4>
+                    <p class="text-slate-600">Ask for letters of recommendation early (at the start of senior year). Choose recommenders who know him well and can speak to different aspects of his character. Good choices would be: <br> 1. A STEM teacher from the BST Academy who saw his academic passion. <br> 2. His Commanding Officer in the NSCC who saw his leadership and discipline. <br> Provide them with his "Scholarship Profile," the list of scholarships he's applying for, and a note about why he's asking them specifically. This helps them write a stronger, more detailed letter.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Phase 4: Revised Timeline -->
+        <section id="phase4" class="mb-16">
+            <div class="text-center mb-8">
+                <span class="text-sm font-semibold text-blue-600 bg-blue-100 py-1 px-3 rounded-full">Phase 4</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">Senior Year Action Timeline</h3>
+                <p class="max-w-2xl mx-auto mt-2 text-slate-600">This process is a marathon, not a sprint. This timeline shows the key activities for each part of senior year to prevent last-minute rushes for important deadlines.</p>
+            </div>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="p-4 text-sm font-semibold text-slate-600 border-b">Timeframe</th>
+                            <th class="p-4 text-sm font-semibold text-slate-600 border-b">Key Activities</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 border-b border-slate-200 align-top font-medium text-slate-800">Summer (Aug)</td>
+                            <td class="p-4 border-b border-slate-200">
+                                <ul class="list-disc list-outside space-y-2 pl-4">
+                                    <li>Finalize the list of colleges (reach, match, safety).</li>
+                                    <li>Begin working on the main Common App essay and other core application essays.</li>
+                                    <li>Create the "Scholarship Profile" or "Brag Sheet".</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 border-b border-slate-200 align-top font-medium text-slate-800">Early Fall (Sep - Oct)</td>
+                            <td class="p-4 border-b border-slate-200">
+                                <ul class="list-disc list-outside space-y-2 pl-4">
+                                    <li>Formally ask teachers and mentors for letters of recommendation.</li>
+                                    <li>Begin intensive search for institutional and external scholarships.</li>
+                                    <li>The FAFSA and CSS Profile open on October 1st. Gather documents and submit as early as possible.</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 border-b border-slate-200 align-top font-medium text-slate-800">Late Fall (Nov - Dec)</td>
+                            <td class="p-4 border-b border-slate-200">
+                                <ul class="list-disc list-outside space-y-2 pl-4">
+                                    <li>Submit Early Action / Early Decision college applications (usually Nov 1 or Nov 15 deadlines).</li>
+                                    <li>The peak period for scholarship application deadlines begins. Focus on applications due in Dec/Jan.</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 border-b border-slate-200 align-top font-medium text-slate-800">Winter (Jan - Feb)</td>
+                            <td class="p-4 border-b border-slate-200">
+                                <ul class="list-disc list-outside space-y-2 pl-4">
+                                    <li>Submit all Regular Decision college applications.</li>
+                                    <li>This is the most intense period for external scholarship applications. Apply consistently.</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 align-top font-medium text-slate-800">Spring (Mar - May)</td>
+                            <td class="p-4">
+                                <ul class="list-disc list-outside space-y-2 pl-4">
+                                    <li>College admission decisions and financial aid offers are released.</li>
+                                    <li>Carefully compare financial aid packages. You can appeal a weak offer.</li>
+                                    <li>Continue applying for last-minute scholarships (many have spring deadlines).</li>
+                                    <li>Make the final college decision by the National Candidate Reply Date, May 1st.</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Phase 5: Tools & Resources -->
+        <section id="phase5">
+            <div class="text-center mb-8">
+                <span class="text-sm font-semibold text-blue-600 bg-blue-100 py-1 px-3 rounded-full">Phase 5</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">Your Scholarship Toolkit</h3>
+                <p class="max-w-2xl mx-auto mt-2 text-slate-600">Here are the tools and resources you'll need to execute the plan. The application tracker is essential for staying organized, and these search engines are the most reputable for finding external scholarships.</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="font-bold text-lg text-slate-800 mb-2">Application Tracker</h4>
+                    <p class="text-slate-600 mb-4">You need a spreadsheet to track every scholarship: name, URL, deadline, login info, essay prompts, required documents, and submission status. This is your command center. Click the button below to download a starter template in CSV format, which you can open in Excel, Google Sheets, or LibreOffice Calc.</p>
+                    <a id="downloadTracker" href="#" class="block w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-center">Download Tracker Template (CSV)</a>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="font-bold text-lg text-slate-800 mb-2">Reputable Search Engines</h4>
+                    <ul class="list-disc list-inside text-slate-600 space-y-2">
+                        <li><a href="https://bigfuture.collegeboard.org/scholarship-search" target="_blank" class="text-blue-600 hover:underline">College Board's Scholarship Search</a></li>
+                        <li><a href="https://www.fastweb.com/" target="_blank" class="text-blue-600 hover:underline">Fastweb</a></li>
+                        <li><a href="https://www.scholarships.com/" target="_blank" class="text-blue-600 hover:underline">Scholarships.com</a></li>
+                        <li><a href="https://www.cappex.com/" target="_blank" class="text-blue-600 hover:underline">Cappex</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-slate-800 text-slate-300 mt-16">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>This interactive guide was created to simplify the scholarship application process.</p>
+            <p class="text-sm mt-2 text-slate-400">&copy; 2025 Scholarship Success Plan. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Accordion/Card toggle functionality
+            const accordions = document.querySelectorAll('.section-card button');
+            accordions.forEach(button => {
+                button.addEventListener('click', () => {
+                    const card = button.parentElement;
+                    card.classList.toggle('is-open');
+                });
+            });
+
+            // Smooth scrolling for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Application Tracker CSV Download (Revised for better compatibility)
+            const downloadButton = document.getElementById('downloadTracker');
+            downloadButton.addEventListener('click', () => {
+                const headers = [
+                    "Scholarship Name", "Category", "URL", "Deadline", "Amount", "Status",
+                    "Username", "Password", "Requires FAFSA/CSS", "Essay Prompts", 
+                    "Letters of Rec Sent", "Submitted Date", "Notes"
+                ];
+                let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+                const encodedUri = encodeURI(csvContent);
+                
+                // Set attributes directly on the link. This is more reliable.
+                downloadButton.setAttribute("href", encodedUri);
+                downloadButton.setAttribute("download", "scholarship_tracker_template.csv");
+            });
+
+            // --- Gemini API Integration ---
+            const callGeminiAPI = async (promptText) => {
+                const apiKey = ""; // API key is handled by the environment
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [{ text: promptText }]
+                    }]
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        console.error("Unexpected API response structure:", result);
+                        return "Sorry, I couldn't get a response. The API returned an unexpected format.";
+                    }
+                } catch (error) {
+                    console.error("Error calling Gemini API:", error);
+                    return "Sorry, an error occurred while trying to connect to the AI assistant.";
+                }
+            };
+
+            // Scholarship Discovery Assistant
+            const discoveryButton = document.getElementById('discovery-button');
+            const discoveryPrompt = document.getElementById('discovery-prompt');
+            const discoveryLoader = document.getElementById('discovery-loader');
+            const discoveryResult = document.getElementById('discovery-result');
+
+            discoveryButton.addEventListener('click', async () => {
+                if (!discoveryPrompt.value.trim()) {
+                    discoveryResult.innerHTML = `<div class="gemini-result-card p-4 rounded-lg"><p class="font-semibold text-slate-700">Please describe a project or interest first.</p></div>`;
+                    discoveryResult.style.display = 'block';
+                    return;
+                }
+                discoveryLoader.style.display = 'flex';
+                discoveryResult.style.display = 'none';
+                discoveryButton.disabled = true;
+
+                const fullPrompt = `A high-achieving high school senior has this specific interest/project: "${discoveryPrompt.value}". He is also in a biomedical STEM program and the Naval Sea Cadet Corps. Based on this, suggest 3-5 niche, creative scholarship categories or specific types of organizations to search for. Format the response as a simple HTML list. For example: '<ul><li>...</li></ul>'`;
+                
+                const responseText = await callGeminiAPI(fullPrompt);
+                
+                discoveryResult.innerHTML = `<div class="gemini-result-card p-4 rounded-lg"><h3 class="font-bold text-lg mb-2 text-slate-800">Niche Search Ideas:</h3>${responseText.replace(/\*/g, '').replace(/(\r\n|\n|\r)/gm,"<br>")}</div>`;
+                discoveryLoader.style.display = 'none';
+                discoveryResult.style.display = 'block';
+                discoveryButton.disabled = false;
+            });
+
+            // Essay Idea Generator
+            const essayButton = document.getElementById('essay-button');
+            const essayPrompt = document.getElementById('essay-prompt');
+            const essayLoader = document.getElementById('essay-loader');
+            const essayResult = document.getElementById('essay-result');
+
+            essayButton.addEventListener('click', async () => {
+                if (!essayPrompt.value.trim()) {
+                    essayResult.innerHTML = `<div class="gemini-result-card p-4 rounded-lg"><p class="font-semibold text-slate-700">Please enter an essay prompt or scholarship mission first.</p></div>`;
+                    essayResult.style.display = 'block';
+                    return;
+                }
+                essayLoader.style.display = 'flex';
+                essayResult.style.display = 'none';
+                essayButton.disabled = true;
+
+                const fullPrompt = `A high-achieving high school senior is applying for a scholarship. His key strengths are leadership in the Naval Sea Cadet Corps (NSCC) and academic excellence in a biomedical STEM program. The scholarship prompt is: "${essayPrompt.value}". Generate 3 distinct essay angles or concepts that connect his strengths to this prompt. Format the response as a simple HTML list with bolded titles for each angle. For example: '<ul><li><strong>Angle 1: ...</strong> ...</li></ul>'`;
+                
+                const responseText = await callGeminiAPI(fullPrompt);
+
+                essayResult.innerHTML = `<div class="gemini-result-card p-4 rounded-lg"><h3 class="font-bold text-lg mb-2 text-slate-800">Suggested Essay Angles:</h3>${responseText.replace(/\*/g, '').replace(/(\r\n|\n|\r)/gm,"<br>")}</div>`;
+                essayLoader.style.display = 'none';
+                essayResult.style.display = 'block';
+                essayButton.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
