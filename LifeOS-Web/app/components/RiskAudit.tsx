@@ -8,8 +8,14 @@ import React, { useState, useEffect } from 'react';
 const categories = ['Physical Security', 'Household Reliability', 'Parenting Example', 'Emotional Attunement', 'Follow-Through'];
 
 export default function RiskAudit() {
+  // State for the audit data, which is a grid of categories and days.
   const [audit, setAudit] = useState<Record<string, string>>({});
+  // State for the score, which is the number of '✓' marks.
   const [score, setScore] = useState(0);
+  // State for the AI's analysis of the audit data.
+  const [analysis, setAnalysis] = useState('');
+  // State to track whether the AI analysis is in progress.
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('marriageEqRiskAudit');
@@ -33,6 +39,34 @@ export default function RiskAudit() {
     if (score >= 20) return 'text-green-600';
     if (score >= 10) return 'text-yellow-600';
     return 'text-red-600';
+  };
+
+  /**
+   * Sends the audit data to the backend for analysis and updates the state
+   * with the AI's response.
+   */
+  const handleAiAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis('');
+    try {
+      const response = await fetch('/api/analyze/risk_audit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ audit_data: audit }),
+      });
+      const data = await response.json();
+      if (data.error) {
+        setAnalysis(`Error: ${data.error}`);
+      } else {
+        setAnalysis(data.analysis);
+      }
+    } catch (error) {
+      setAnalysis('An unexpected error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -34,6 +34,12 @@ class AdvanceFlowRequest(BaseModel):
     current_step: str
     response: str
 
+class RiskAuditRequest(BaseModel):
+    """
+    Pydantic model for the request body of the /api/analyze/risk_audit endpoint.
+    """
+    audit_data: dict
+
 app = FastAPI()
 
 # In-memory store for flow states. In a production environment, this would be
@@ -220,6 +226,38 @@ async def log_feedback(request: FeedbackRequest):
 
     except Exception as e:
         return {"error": f"Failed to log feedback: {str(e)}"}
+
+@app.post("/api/analyze/risk_audit")
+async def analyze_risk_audit(request: RiskAuditRequest):
+    """
+    Receives risk audit data, uses a large language model to analyze it, and
+    returns a compassionate but firm analysis.
+    """
+    try:
+        # Initialize the language model.
+        llm = ChatOpenAI(model="gpt-4-turbo", temperature=0.7)
+
+        # Create a detailed prompt to guide the AI's analysis.
+        prompt = f"""
+        You are a compassionate but firm life coach. You are analyzing a user's weekly risk audit.
+        The user has provided the following data, where '✓' means success, '~' means partial success or effort made, and '✗' means failure.
+        Data: {request.audit_data}
+
+        Your task is to:
+        1.  Identify the areas where the user is struggling the most.
+        2.  Acknowledge the areas where the user is succeeding.
+        3.  Provide actionable, compassionate, and firm advice to help the user improve.
+        4.  Keep your analysis to 2-3 paragraphs.
+        """
+
+        # Get the AI's analysis.
+        response = await llm.acomplete(prompt)
+
+        return {
+            "analysis": response.text
+        }
+    except Exception as e:
+        return {"error": f"Failed to analyze risk audit: {str(e)}"}
 
 @app.get("/")
 async def root():
