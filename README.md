@@ -4,7 +4,7 @@
 
 **Core Philosophy**: "Compassionate Firmness" – combining rigorous system management (GTD, PARA) with deep emotional and spiritual support. The system is supportive but steady, willing to tell the hard truth without sugar-coating difficult realities, while remaining empathetic to the user's context.
 
-## 2. Core Architectural Principles
+## Core Architectural Principles
 
 ### Principle 1: Separation of Concerns
 **PARA organizes KNOWLEDGE. GTD organizes ACTIONS.**
@@ -32,7 +32,7 @@ Beyond binary "actionable/not actionable":
 
 ---
 
-## 3. Directory Structure
+## Directory Structure
 
 ```
 LifeOS/
@@ -86,7 +86,7 @@ LifeOS/
 
 ---
 
-## 5. Key Workflows
+## Key Workflows
 
 ### A. Capture → Process Workflow (GTD Core)
 
@@ -134,7 +134,7 @@ LifeOS/
    - Priority
 ```
 
-### B. Relationship Coaching (The "Heart")
+### Relationship Coaching (The "Heart")
 
 **Source**: `system-blueprint.md` - Pursue-Withdraw Cycle Breaking
 
@@ -149,7 +149,7 @@ LifeOS/
 
 **Tracking**: Weekly journaling in `Areas/Personal-Reflection/Weekly/2025-W47.md`
 
-### C. The ONE THING (Daily Priority)
+### The ONE THING (Daily Priority)
 
 **Morning Ritual** (7:00 AM):
 1. AI prompts: *"What's your ONE THING for today?"*
@@ -163,7 +163,7 @@ LifeOS/
 2. Journal entry in `Areas/Personal-Reflection/Daily/YYYY-MM-DD.md`
 3. Celebrate or analyze obstacles
 
-### D. Weekly Review (Sunday Evening)
+### Weekly Review (Sunday Evening)
 
 **Checklist** stored in: `System/Templates/weekly-review-checklist.md`
 
@@ -196,7 +196,7 @@ LifeOS/
 
 ---
 
-## 6. Metadata Standards
+## Metadata Standards
 
 ### Task Template
 
@@ -288,7 +288,7 @@ Use when: Tired but want to make progress
 
 ---
 
-## 8. Implementation Roadmap
+## Implementation Roadmap
 
 ### Phase 1: Foundation (Week 1)
 - [x] ~~Create MASTER_PLAN.md~~
@@ -330,7 +330,7 @@ Use when: Tired but want to make progress
 
 ---
 
-## 9. AI Agent Configuration
+## AI Agent Configuration
 
 ### Core Capabilities
 
@@ -365,7 +365,7 @@ Use when: Tired but want to make progress
 
 ---
 
-## 10. Success Metrics
+## Success Metrics
 
 ### System Health (Weekly)
 - **Inbox Zero**: GTD-Tasks/0-Inbox/ processed to empty
@@ -386,7 +386,7 @@ Use when: Tired but want to make progress
 
 ---
 
-## 11. What Makes This System Different
+## What Makes This System Different
 
 ### 1. True Separation of Concerns
 Most systems mix "where it goes" with "what to do with it."  
@@ -418,7 +418,7 @@ Not just productivity—character formation:
 
 ---
 
-## 12. Next Steps
+## Next Steps
 
 **Immediate** (Today):
 1. Review and approve this Master Plan
