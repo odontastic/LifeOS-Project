@@ -33,6 +33,8 @@ LifeOS is comprised of three main components:
 -   **Integrated Knowledge Management:** Seamlessly combine the PARA method for organizing knowledge with the GTD system for managing tasks, creating a holistic view of your life.
 -   **Personalized Workflows:** From daily check-ins and weekly reviews to specialized coaching for emotional intelligence, LifeOS is designed to support your unique goals and routines.
 -   **RAG Architecture:** The powerful RAG-based backend allows the AI to retrieve relevant information from your personal notes, ensuring that its guidance is always grounded in your own experiences and reflections.
+-   **Daily Journal:** A dedicated view to browse and review daily journal entries, which are composed of chat sessions. Includes the ability to navigate by date and export entries in various formats.
+-   **Weekly Risk Audit:** An interactive grid to conduct a weekly audit across key life categories, with a scoring system and a placeholder for future AI analysis.
 
 ## Future Ideas
 
