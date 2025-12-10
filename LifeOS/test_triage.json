@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "original_text": "Read Atomic Habits",
+      "type": "Reference",
+      "reference_type": "Book",
+      "title": "Atomic Habits",
+      "author": "James Clear",
+      "target_list": "to_read_list",
+      "priority": "High",
+      "category": ["Habits", "Personal Growth"],
+      "why": "Essential for building consistent habits",
+      "research_recommended": false
+    },
+    {
+      "original_text": "Call dentist",
+      "type": "Task",
+      "title": "Schedule Dentist Appointment",
+      "filename": "schedule-dentist-appointment.md",
+      "target_dir": "GTD-Tasks/1-Next-Actions",
+      "frontmatter": {
+        "title": "Schedule Dentist Appointment",
+        "type": "Task",
+        "status": "todo",
+        "priority": "P3",
+        "energy": "Low",
+        "context": "@phone"
+      },
+      "content": "Call Dr. Smith's office for 6-month checkup."
+    }
+  ]
+}
