@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///home/austin/Documents/LifeOS/01-Projects/Development/app/page.tsx"],"sourcesContent":["// app/page.tsx\n'use client';\n\nimport React from 'react';\n\nexport default function Home() {\n  return (\n    <div>\n      <h1>Welcome to Marriage EQ OS</h1>\n      <p>Your dashboard for relationship health.</p>\n    </div>\n  );\n}"],"names":[],"mappings":"AAAA,eAAe;;;;;;AACf;;AAIe,SAAS;IACtB,qBACE,qPAAC;;0BACC,qPAAC;0BAAG;;;;;;0BACJ,qPAAC;0BAAE;;;;;;;;;;;;AAGT;KAPwB"}}]
-}
