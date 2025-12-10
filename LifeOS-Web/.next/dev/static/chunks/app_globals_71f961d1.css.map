@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///app/LifeOS-Web/app/globals.css"],"sourcesContent":["/*! tailwindcss v4.1.17 | MIT License | https://tailwindcss.com */\n@layer properties;\n.mx-auto {\n  margin-inline: auto;\n}\n.block {\n  display: block;\n}\n.flex {\n  display: flex;\n}\n.grid {\n  display: grid;\n}\n.h-full {\n  height: 100%;\n}\n.w-full {\n  width: 100%;\n}\n.flex-1 {\n  flex: 1;\n}\n.border-collapse {\n  border-collapse: collapse;\n}\n.flex-col {\n  flex-direction: column;\n}\n.items-center {\n  align-items: center;\n}\n.overflow-x-auto {\n  overflow-x: auto;\n}\n.overflow-y-auto {\n  overflow-y: auto;\n}\n.border {\n  border-style: var(--tw-border-style);\n  border-width: 1px;\n}\n.text-center {\n  text-align: center;\n}\n@property --tw-border-style {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: solid;\n}\n@layer properties {\n  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {\n    *, ::before, ::after, ::backdrop {\n      --tw-border-style: solid;\n    }\n  }\n}"],"names":[],"mappings":"AACA;EAkDE;IACE;;;;;;AAlDJ;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;AAGA;;;;;AAIA;;;;AAGA"}}]
+}
