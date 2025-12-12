@@ -3,7 +3,7 @@ title: "Scientific Foundation of LifeOS Practices"
 type: "Documentation"
 status: "Active"
 created: "2025-12-11"
-last_updated: "2025-12-11"
+last_updated: "2025-12-12"
 tags: ["documentation", "science", "neuroscience", "psychology", "theology"]
 ---
 

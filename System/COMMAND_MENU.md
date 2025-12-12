@@ -330,4 +330,24 @@ I'll figure out what you need and guide you.
 
 ---
 
+---
+
+## 🛠️ PROJECT SCRIPTS (for agent or user)
+
+This section lists simplified shell scripts for managing the project's technical components. These can be executed by an AI agent or by the user in the terminal.
+
+-   **`./scripts/start-services.sh`**
+    -   **Purpose**: Starts the backend services (FastAPI, database, etc.) using `docker-compose`.
+    -   **When to use**: Use this when you need to activate the backend API for the web application to use.
+
+-   **`./scripts/stop-services.sh`**
+    -   **Purpose**: Stops all backend services that were started with `start-services.sh`.
+    -   **When to use**: Use this to shut down the backend services when you are finished working with them.
+
+-   **`./scripts/start-frontend.sh`**
+    -   **Purpose**: Starts the frontend web application in development mode.
+    -   **When to use**: Use this to run the web interface locally, allowing you to see and interact with the application in a browser.
+
+---
+
 **Ready?** Choose a number (1-9) or describe what you need.

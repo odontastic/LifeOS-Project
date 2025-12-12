@@ -3,12 +3,11 @@ title: "LifeOS Schema and Standards"
 type: "Documentation"
 status: "Active"
 created: "2025-12-11"
-last_updated: "2025-12-11"
+last_updated: "2025-12-12"
 tags: ["documentation", "schema", "standards", "frontmatter", "gtd", "para"]
 ---
 
-# LifeOS Project Schema Standards 
-# created: 2025-12-10
+# LifeOS Project Schema Standards
 
 ## Overview
 This document comprehensively documents all schema standards used throughout the LifeOS project. These standards ensure consistency, maintainability, and effective knowledge management across the entire system.
@@ -27,7 +26,7 @@ This document comprehensively documents all schema standards used throughout the
 ### Optional Fields
 - `subtitle`: Brief description or subtitle
 - `category`: Document category (e.g., "projects", "areas", "resources", "system", "archives")
-- `last_modified`: Last modification date in ISO 8601 format
+- `last_updated`: Last modification date in ISO 8601 format
 - `project`: Related project reference using [[link]] format
 - `area`: Related area reference using [[link]] format
 - `context`: Context tag for tasks (e.g., "@Computer", "@Home", "@Calls", "@Errands", "@Shopping", "@Cleaning", "@Organization")
@@ -59,8 +58,8 @@ tags: [tag1, tag2]
 - All markdown files must have proper YAML frontmatter
 - Frontmatter must start and end with `---`
 - Use ISO 8601 date format consistently
-- Update `last_modified` whenever document is edited
-- Run validation with: `python check_frontmatter.py`
+- Update `last_updated` whenever document is edited
+- Run validation with: `python knowledge_base/check_frontmatter.py`
 
 ---
 
@@ -68,12 +67,12 @@ tags: [tag1, tag2]
 
 ### Directory Structure
 ```
-Project Root/
+/ (Project Root)
 ├── knowledge_base/
 │   ├── Projects/           # Active and completed projects
 │   ├── Areas/             # Life areas and responsibilities
 │   ├── Resources/         # Knowledge assets, references, guides
-│   ├── GTD-Tasks/         # Task management by priority
+│   ├── GTD-Tasks/         # Task management by workflow status
 │   ├── Journal/           # Personal reflections and daily notes
 │   ├── Archives/          # Completed and historical content
 │   └── Inbox.md          # Catch-all for unprocessed items
@@ -82,7 +81,7 @@ Project Root/
 ```
 
 ### File Naming Standards
-- Use camel snake case for all file names
+- Use kebab-case for all file names (e.g., `my-file-name.md`)
 - Prefix with numbers for ordering (e.g., `01-note-template.md`, `02-area-template.md`)
 - Use dates in YYYY-MM-DD format for time-sensitive files
 - Include descriptive names that reflect content type
@@ -104,6 +103,7 @@ title: "Note Title"
 type: Note
 status: Active
 created: YYYY-MM-DD
+last_updated: YYYY-MM-DD
 tags: [note, topic]
 related_files: [[related-file]]
 related_areas: [[Areas/Area-Name]]
@@ -118,6 +118,7 @@ title: "Project Name"
 type: Project
 status: Active  # Active | On Hold | Completed
 created: YYYY-MM-DD
+last_updated: YYYY-MM-DD
 tags: [project, category]
 area: [[Areas/Area-Name]]
 ---
@@ -130,6 +131,7 @@ title: "Area Name"
 type: Area
 status: Active
 created: YYYY-MM-DD
+last_updated: YYYY-MM-DD
 tags: [area, life-domain]
 description: |
   Comprehensive description of the life area
@@ -210,7 +212,7 @@ completed: ""  # YYYY-MM-DD
 
 ### GTD Directory Structure
 ```
-GTD-Tasks/
+knowledge_base/GTD-Tasks/
 ├── 0-Inbox/          # Unprocessed tasks and ideas
 ├── 1-Next-Actions/   # Immediate next actions
 ├── 2-Waiting-For/    # Items delegated to others
@@ -249,35 +251,30 @@ GTD-Tasks/
 
 ### Project Organization
 ```
-Projects/
+knowledge_base/Projects/
 ├── 00-project-master-index.md
 ├── Active/
-│   ├── project-name/
-│   └── project-name.md
+│   └── project-name.md  # Individual project files reside here
 ├── Completed/
 └── Someday/
 ```
 
 ### Area Organization
 ```
-Areas/
+knowledge_base/Areas/
 ├── 00-area-master-index.md
-├── Area-Name/
-│   ├── sub-area/
-│   └── area-file.md
-└── Personal-Reflection/
+├── car_maintenance.md     # Individual area files reside here
+└── Personal-Reflection/ # Can contain sub-folders for structure
 ```
 
 ### Resource Organization
 ```
-Resources/
+knowledge_base/Resources/
 ├── Knowledge/          # Knowledge assets and guides
 ├── Lists/             # Collections and lists
 ├── People/           # Contact information
 ├── Courses/          # Learning materials
-├── Books/            # Book references
-├── Articles/         # Article references
-└── Guides/           # How-to guides
+└── ...etc
 ```
 
 ---
@@ -345,27 +342,27 @@ tags: [journal, daily]
 ## 10. Automation and Validation Scripts
 
 ### Frontmatter Validation
-- **Script**: `check_frontmatter.py`
+- **Script**: `knowledge_base/check_frontmatter.py`
 - **Purpose**: Validates all markdown files have proper YAML frontmatter
-- **Usage**: `python check_frontmatter.py`
+- **Usage**: `python knowledge_base/check_frontmatter.py`
 - **Validation**:
   - Checks for proper `---` delimiters
   - Verifies content exists after frontmatter
   - Reports files with missing or malformed frontmatter
 
 ### Contextual Guardian
-- **Script**: `contextual_guardian.py`
+- **Script**: `knowledge_base/contextual_guardian.py`
 - **Purpose**: Emergency emotional regulation tool
-- **Usage**: `python contextual_guardian.py`
+- **Usage**: `python knowledge_base/contextual_guardian.py`
 - **Features**:
   - Breathing exercises (4-7-8 technique)
   - Active listening guidance
   - Relationship repair prompts
 
 ### Empathy Engine
-- **Script**: `empathy_engine.py`
+- **Script**: `knowledge_base/empathy_engine.py`
 - **Purpose**: AI-powered empathy and relationship analysis
-- **Usage**: `python empathy_engine.py --dry-run`
+- **Usage**: `python knowledge_base/empathy_engine.py --dry-run`
 - **Features**:
   - Analyzes communication patterns
   - Provides relationship insights
@@ -386,21 +383,21 @@ tags: [journal, daily]
 - **Framework**: Next.js with TypeScript
 - **Styling**: Tailwind CSS
 - **Package Manager**: npm
-- **Development**: `npm run dev`
-- **Build**: `npm run build`
-- **Start**: `npm start`
+- **Development**: `npm --prefix apps/frontend/LifeOS-Web run dev`
+- **Build**: `npm --prefix apps/frontend/LifeOS-Web run build`
+- **Start**: `npm --prefix apps/frontend/LifeOS-Web start`
 
 ### API Routes
-- Location: `app/api/`
+- Location: `apps/frontend/LifeOS-Web/app/api/`
 - Structure: RESTful endpoints
 - Error handling: Try-catch blocks with proper HTTP status codes
 - Environment variables: Use `.env` files for sensitive data
 
 ### Chat Interface
-- **Route**: `/api/chat/route.ts`
+- **Route**: `apps/frontend/LifeOS-Web/app/api/chat/route.ts`
 - **Purpose**: AI conversation endpoint
 - **Security**: Environment variable protection
--- **Mock Response**: Development placeholder for testing
+- **Mock Response**: Development placeholder for testing
 
 ### Web Application Standards
 - Use TypeScript for type safety
@@ -543,7 +540,7 @@ tags: [journal, daily]
 5. **Gather Feedback**: Collect user input on improvements
 
 ### Training and Onboarding
-1. **Start Here**: Use `00-Start-Here.md` for system introduction
+1. **Start Here**: Use `knowledge_base/00-Start-Here.md` for system introduction
 2. **Template Guide**: Reference `System/Getting_Started/01_Using_Templates.md`
 3. **Connection Guide**: Use `System/Getting_Started/02_Creating_Connections.md`
 4. **AI Integration**: Review `System/Getting_Started/03_Working_With_AI.md`

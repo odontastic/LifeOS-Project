@@ -3,7 +3,7 @@ title: "LifeOS Master Plan"
 type: "Documentation"
 status: "Active"
 created: "2025-12-11"
-last_updated: "2025-12-11"
+last_updated: "2025-12-12"
 tags: ["documentation", "master-plan", "architecture", "gtd", "para"]
 ---
 
@@ -44,53 +44,31 @@ Beyond binary "actionable/not actionable":
 ## Directory Structure
 
 ```
-LifeOS/
-├── GTD-Tasks/                  # 🎯 ALL actionable items and processing states
-│   ├── 0-Inbox/               # Unsorted capture (everything starts here)
-│   ├── 1-Next-Actions/        # Ready to execute (the canonical action list)
-│   ├── 2-Waiting-For/         # Delegated or blocked on others
-│   ├── 3-Someday-Maybe/       # Not committed yet, future possibilities
-│   ├── 4-To-Read/             # Books, articles, videos, podcasts to consume
-│   ├── 5-To-Think-About/      # Needs contemplation before becoming action
-│   └── 6-Needs-Processing/    # Raw notes needing elaboration/connection
+/ (Project Root)
+├── knowledge_base/
+│   ├── GTD-Tasks/                  # 🎯 ALL actionable items and processing states
+│   │   ├── 0-Inbox/
+│   │   └── ...
+│   │
+│   ├── Projects/                   # 📋 PARA: Outcomes with deadlines
+│   │   ├── Active/
+│   │   └── ...
+│   │
+│   ├── Areas/                      # 🏠 PARA: Ongoing responsibilities
+│   │   ├── Family/
+│   │   └── ...
+│   │
+│   ├── Resources/                  # 📚 PARA: Reference material
+│   │   ├── Zettelkasten/
+│   │   └── ...
+│   │
+│   └── Archives/                   # 🗄️ PARA: Inactive content
 │
-├── Projects/                   # 📋 PARA: Outcomes with deadlines
-│   ├── Active/
-│   │   ├── Self-Improvement/
-│   │   ├── Family-Projects/
-│   │   ├── Home-Projects/
-│   │   └── LifeOS-Development/
-│   ├── Someday/               # Not active but defined
-│   └── Completed/             # Archived completed projects
-│
-├── Areas/                      # 🏠 PARA: Ongoing responsibilities
-│   ├── Family/
-│   ├── Faith/
-│   ├── Health/
-│   ├── House/
-│   ├── Homeschool/
-│   └── Personal-Reflection/   # Daily/Weekly/Monthly journaling
-│
-├── Resources/                  # 📚 PARA: Reference material
-│   ├── Zettelkasten/          # PKM: Atomic evergreen notes
-│   │   ├── Fleeting/          # Quick captures, need processing
-│   │   ├── Literature/        # Notes from sources
-│   │   └── Permanent/         # Refined, connected concepts
-│   ├── MOCs/                  # Maps of Content (index notes)
-│   ├── People/                # Relationship notes (CRM-like)
-│   ├── Books/                 # Book summaries and notes
-│   ├── Articles/              # Article highlights
-│   ├── Courses/               # Course materials
-│   └── Templates/             # Reusable note templates
-│
-├── Archives/                   # 🗄️ PARA: Inactive content
-│   └── Legacy-Plans/          # Old planning documents
-│
-└── System/                     # ⚙️ Meta: System documentation
-    ├── Prompts/               # AI system prompts
-    ├── Templates/             # Task, note, project templates
-    ├── Queries/               # Saved query definitions
-    └── Context-Definitions/   # GTD context documentation
+└── System/                         # ⚙️ Meta: System documentation
+    ├── Prompts/
+    ├── Templates/
+    ├── Queries/
+    └── ...
 ```
 
 ---
@@ -152,11 +130,11 @@ LifeOS/
   - Context: `@Home`
   - Time: `15min`
   - Energy: `Low` (can do when tired)
-  - Linked: `[[Areas/Family/Marriage]]`
+  - Linked: `[[BROKEN LINK: Areas/Family/Marriage]]`
 
-**First-Aid Kit Phrases** stored in: `Resources/Templates/first-aid-kit-phrases.md`
+**First-Aid Kit Phrases** stored in: `[[BROKEN LINK: Resources/Templates/first-aid-kit-phrases.md]]`
 
-**Tracking**: Weekly journaling in `Areas/Personal-Reflection/Weekly/2025-W47.md`
+**Tracking**: Weekly journaling in `[[BROKEN LINK: Areas/Personal-Reflection/Weekly/2025-W47.md]]`
 
 ### The ONE THING (Daily Priority)
 
