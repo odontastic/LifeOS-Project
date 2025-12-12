@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Goal",
+  "description": "Horizon 3-5 direction.",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "title",
+    "body",
+    "horizon",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^G-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "description": "Unique identifier for the goal (UUID prefixed with G-)"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["goal"],
+      "description": "Type of the entity"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of the goal"
+    },
+    "body": {
+      "type": "string",
+      "description": "Detailed description and rationale for the goal"
+    },
+    "horizon": {
+      "type": "string",
+      "enum": ["H3", "H4", "H5"],
+      "description": "Horizon level of the goal (H3 = 1-2 years, H4 = 3-5 years, H5 = Purpose/Identity)"
+    },
+    "target_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Target date for achieving the goal (ISO 8601)"
+    },
+    "related_areas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^A-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "description": "IDs of related areas that contribute to this goal"
+    },
+    "supporting_projects": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^P-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "description": "IDs of projects actively supporting this goal"
+    },
+    "inspiring_zettels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^Z-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "description": "IDs of zettels that provide inspiration or foundational knowledge for this goal"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of creation (ISO 8601)"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last update (ISO 8601)"
+    }
+  },
+  "indexes": [
+    "id",
+    "created_at",
+    "updated_at",
+    "type",
+    "horizon",
+    "related_areas"
+  ],
+  "example": {
+    "id": "G-c1d2e3f4-a5b6-7c8d-9e0f-1234567890ab",
+    "type": "goal",
+    "title": "Achieve Financial Independence",
+    "body": "Reach a state where passive income covers all living expenses, providing freedom and security for the family.",
+    "horizon": "H4",
+    "target_date": "2030-12-31",
+    "related_areas": ["A-f1e2d3c4-b5a6-7c8d-9e0f-1234567890ab"],
+    "supporting_projects": ["P-a1b2c3d4-e5f6-7a8b-9c0d-1234567890ab"],
+    "inspiring_zettels": ["Z-c1d2e3f4-a5b6-7c8d-9e0f-1234567890ab"],
+    "created_at": "2025-01-01T07:00:00Z",
+    "updated_at": "2025-01-15T10:00:00Z"
+  }
+}

@@ -23,6 +23,7 @@ services:
     depends_on:
       - neo4j
       - qdrant
+      - redis
     env_file:
       - .env
 
@@ -45,6 +46,13 @@ services:
       - "6334:6334"
     volumes:
       - qdrant-data:/qdrant/storage
+    networks:
+      - lifeos-net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
     networks:
       - lifeos-net
 
