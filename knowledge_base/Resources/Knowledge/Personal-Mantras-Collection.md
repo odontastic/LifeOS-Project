@@ -1,10 +1,13 @@
-# Personal Mantras Collection
-
-**Created:** 2025-12-06  
-**Category:** Self-Discovery, Personal Identity, Creative Expression  
-**Status:** Active Reference
-
 ---
+title: "Personal Mantras Collection"
+type: "Resource"
+status: "Active"
+created: "2025-12-06"
+last_updated: "2025-12-11"
+tags: ["mantras", "self-discovery", "identity", "creative-expression"]
+---
+
+# Personal Mantras Collection
 
 ## Overview
 

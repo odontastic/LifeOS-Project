@@ -1,10 +1,11 @@
 ---
-title: Matthew's Scholarship Search
-type: Project
-status: Active
-tags: [education, finance, matthew, senior-year]
---- 
-
+title: "Matthew's Scholarship Search"
+type: "Project"
+status: "Active"
+created: "2025-12-05"
+last_updated: "2025-12-11"
+tags: ["education", "finance", "matthew", "senior-year"]
+---
 # Project: Matthew's Scholarship Search (Merit Aid Focus)
 
 **Goal:** Secure merit-based funding for Matthew's college education, leveraging his STEM profile and Naval Sea Cadet service.

@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Reflection",
+  "description": "Log of insights, emotional state, observations.",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "body",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^REF-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "description": "Unique identifier for the reflection (UUID prefixed with REF-)"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["reflection"],
+      "description": "Type of the entity"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of the reflection (auto-generated, e.g., 'Daily Reflection - YYYY-MM-DD')"
+    },
+    "body": {
+      "type": "string",
+      "description": "Main content of the reflection, free-form notes"
+    },
+    "mood": {
+      "type": "string",
+      "description": "Emotional state during reflection (e.g., 'energetic', 'frustrated', 'calm')"
+    },
+    "insights": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key insights gained during the reflection"
+    },
+    "frustrations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Frustrations or challenges identified"
+    },
+    "gratitude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Things to be grateful for"
+    },
+    "generated_zettels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^Z-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "description": "IDs of zettels generated from this reflection"
+    },
+    "adjusted_projects": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^P-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "description": "IDs of projects adjusted as a result of this reflection"
+    },
+    "tasks_captured": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^T-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "description": "IDs of tasks captured during this reflection"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of creation (ISO 8601)"
+    }
+  },
+  "indexes": [
+    "id",
+    "created_at",
+    "type",
+    "mood"
+  ],
+  "example": {
+    "id": "REF-d1c2b3a4-e5f6-7g8h-9i0j-1234567890ab",
+    "type": "reflection",
+    "title": "Daily Reflection - 2025-01-20",
+    "body": "Today was challenging, but I managed to stay present with my family despite work pressures.",
+    "mood": "calm",
+    "insights": ["Presence over productivity is key."],
+    "frustrations": ["Distractions from notifications."],
+    "gratitude": ["Family time", "Productive coding session"],
+    "generated_zettels": ["Z-c1d2e3f4-a5b6-7c8d-9e0f-1234567890ab"],
+    "adjusted_projects": [],
+    "tasks_captured": ["T-f1e2d3c4-b5a6-7c8d-9e0f-1234567890ab"],
+    "created_at": "2025-01-20T20:00:00Z"
+  }
+}

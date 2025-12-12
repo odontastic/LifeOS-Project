@@ -1,0 +1,31 @@
+│  Agent powering down. Goodbye!                                                          │
+│                                                                                         │
+│  Interaction Summary                                                                    │
+│  Session ID:                 c4fb1af7-c670-4bbd-b941-839b822d08ff                       │
+│  Tool Calls:                 126 ( ✓ 122 x 4 )                                          │
+│  Success Rate:               96.8%                                                      │
+│  User Agreement:             100.0% (125 reviewed)                                      │
+│  Code Changes:               +2147 -34                                                  │
+│                                                                                         │
+│  Performance                                                                            │
+│  Wall Time:                  5h 46m 24s                                                 │
+│  Agent Active:               3h 31m 32s                                                 │
+│    » API Time:               37m 38s (17.8%)                                            │
+│    » Tool Time:              2h 53m 54s (82.2%)                                         │
+│                                                                                         │
+│                                                                                         │
+│  Model Usage                  Reqs   Input Tokens  Output Tokens                        │
+│  ───────────────────────────────────────────────────────────────                        │
+│  gemini-2.5-flash-lite          13        234,823          4,546                        │
+│  gemini-2.5-pro                102     11,198,349         35,278                        │
+│  gemini-2.5-flash               22      6,194,779          2,091                        │
+│                                                                                         │
+│  Savings Highlight: 10,615,762 (60.2%) of input tokens were served from the cache,      │
+│  reducing costs.                                                                        │
+│                                                                                         │
+│  Usage limits span all sessions and reset daily.                                        │
+│  /auth to upgrade or switch to API key.                                                 │
+│                                                                                         │
+│                                                                                         │
+│  » Tip: For a full token breakdown, run `/stats model`.                                 │
+│

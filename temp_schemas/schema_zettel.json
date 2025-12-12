@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Zettel",
+  "description": "Atomic thought / conceptual building block.",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "title",
+    "body",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^Z-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "description": "Unique identifier for the zettel (UUID prefixed with Z-)"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["zettel"],
+      "description": "Type of the entity"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of the zettel"
+    },
+    "body": {
+      "type": "string",
+      "description": "Main content of the zettel"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Keywords or tags for categorization"
+    },
+    "links": {
+      "type": "object",
+      "properties": {
+        "parents": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^Z-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "description": "IDs of parent zettels"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^Z-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "description": "IDs of child zettels"
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^Z-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "description": "IDs of related zettels"
+        }
+      },
+      "description": "Links to other zettels"
+    },
+    "area": {
+      "type": ["string", "null"],
+      "pattern": "^A-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "description": "ID of the associated area"
+    },
+    "project": {
+      "type": ["string", "null"],
+      "pattern": "^P-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "description": "ID of the associated project"
+    },
+    "horizon": {
+      "type": ["string", "null"],
+      "enum": ["H1", "H2", "H3", "H4", "H5"],
+      "description": "Horizon level of the zettel"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of creation (ISO 8601)"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last update (ISO 8601)"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "AI assessed confidence in zettel's veracity/connection"
+    }
+  },
+  "indexes": [
+    "id",
+    "created_at",
+    "updated_at",
+    "type",
+    "area",
+    "project"
+  ],
+  "example": {
+    "id": "Z-c1d2e3f4-a5b6-7c8d-9e0f-1234567890ab",
+    "type": "zettel",
+    "title": "Neuroplasticity Basics",
+    "body": "Neurons that fire together, wire together. This is the fundamental principle of brain plasticity, allowing the brain to adapt and reorganize itself.",
+    "tags": ["neuroscience", "learning", "brain"],
+    "links": {
+      "parents": ["Z-d1c2e3f4-b5a6-8d7c-0f9e-abcdef123456"],
+      "children": [],
+      "related": ["Z-e1d2c3b4-a5f6-7e8d-9c0b-fedcba987654"]
+    },
+    "area": "A-f1e2d3c4-b5a6-7c8d-9e0f-1234567890ab",
+    "project": null,
+    "horizon": "H5",
+    "created_at": "2025-01-01T10:00:00Z",
+    "updated_at": "2025-01-01T10:00:00Z",
+    "confidence": "high"
+  }
+}
