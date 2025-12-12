@@ -3,7 +3,7 @@ title: "LifeOS Architecture Decisions"
 type: "Documentation"
 status: "Archived"
 created: "2025-11-20"
-last_updated: "2025-12-11"
+last_updated: "2025-12-12"
 tags: ["documentation", "architecture", "gtd", "para", "decision-record"]
 ---
 
@@ -72,35 +72,29 @@ tags: ["documentation", "architecture", "gtd", "para", "decision-record"]
 ### Adopted Structure
 
 ```
-LifeOS/
-├── GTD-Tasks/                  # 🎯 GTD: ALL actionable items
-│   ├── 0-Inbox/
-│   ├── 1-Next-Actions/
-│   ├── 2-Waiting-For/
-│   ├── 3-Someday-Maybe/
-│   ├── 4-To-Read/
-│   ├── 5-To-Think-About/
-│   └── 6-Needs-Processing/
-│
-├── Projects/                   # 📋 PARA: Outcomes with deadlines
-│   ├── Active/
-│   ├── Someday/
-│   └── Completed/
-│
-├── Areas/                      # 🏠 PARA: Ongoing responsibilities
-│   └── Personal-Reflection/   # ✅ Journal lives here
-│
-├── Resources/                  # 📚 PARA: Reference material
-│   ├── Zettelkasten/         # ✅ PKM lives here
-│   ├── MOCs/                  # ✅ MOCs live here
-│   └── People/                # ✅ CRM lives here
-│
-├── Archives/                   # 🗄️ PARA: Inactive content
+/ (Project Root)
+├── knowledge_base/
+│   ├── GTD-Tasks/                  # 🎯 GTD: ALL actionable items
+│   │   ├── 0-Inbox/
+│   │   └── ...
+│   │
+│   ├── Projects/                   # 📋 PARA: Outcomes with deadlines
+│   │   ├── Active/
+│   │   └── ...
+│   │
+│   ├── Areas/                      # 🏠 PARA: Ongoing responsibilities
+│   │   └── Personal-Reflection/   # ✅ Journal lives here
+│   │
+│   ├── Resources/                  # 📚 PARA: Reference material
+│   │   ├── Zettelkasten/         # ✅ PKM lives here
+│   │   └── ...
+│   │
+│   └── Archives/                   # 🗄️ PARA: Inactive content
 │
 └── System/                     # ⚙️ Meta: System documentation
     ├── Prompts/
     ├── Templates/
-    └── Context-Definitions/
+    └── ...
 ```
 
 ### Key Changes & Rationale
