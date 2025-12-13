@@ -13,6 +13,13 @@ This document captures ideas for future development, including automation with c
 
 ## Other Future Enhancements
 
+-   **Inner Palette & Emotion Engine Vision:** This integrated module is a core, ongoing development initiative for emotional intelligence. Its full vision includes Neuro-Coaching, advanced feedback loops, deep integration with Crisis Mode, and sophisticated pattern recognition for emotional growth.
+-   **Resolving Licensing Conflicts:** High-priority consideration for replacing non-permissive components like Neo4j (GPLv3) and newer Redis versions (RSALv2/SSPLv1) with permissively licensed alternatives (e.g., ArangoDB, KeyDB, older Redis versions).
+-   **Full Android Native App Development:** Plan for a dedicated native or cross-platform (Flutter/React Native) mobile application to provide a superior user experience, leveraging the FastAPI backend.
+-   **Enhanced Database Security:** Beyond current authentication, implement robust authentication, encryption (in-transit and at-rest), and strict network access controls for all databases (Qdrant, Redis/alternative, Graph DB alternative).
+-   **JSON Schema Registry & AI Safety Layer Implementation:** Develop the `/schemas/registry.json` and individual schema files, and enforce the "Ethical Contract Layer" and "Engineering Conduct Rules" for AI agents to ensure schema invariance, module purity, and predictable, aligned behavior.
+-   **Self-Feedback Loop & Autonomous Framework Learning:** Implement adaptive learning mechanisms where the system uses user feedback (e.g., on `SystemInsight` effectiveness) to adjust model weights and improve the accuracy and relevance of AI-generated recommendations and insights.
+
 -   **Temporal Middleware Semantic Filtering Enhancement:**
     -   **Current State:** `extract_semantic_filters_with_llm` in `src/temporal.py` uses a basic LLM call for semantic extraction (e.g., `life_stage`, `episode`).
     -   **Enhancement:** Improve the LLM's prompt and/or integrate a more sophisticated parsing mechanism to more accurately extract and map diverse semantic terms from user queries into filterable properties. This will directly support the "Contextual Dashboard Generator" workflow.
