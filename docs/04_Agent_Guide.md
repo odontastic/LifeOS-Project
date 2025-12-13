@@ -31,6 +31,10 @@ LifeOS is a comprehensive, AI-enhanced system designed to serve as a second brai
 -   **/apps/backend/lifeos-rag-api**: The backend of the system, powered by a FastAPI application. It uses a RAG (Retrieval-Augmented Generation) architecture to provide a powerful, context-aware AI that can interact with the user's personal knowledge base.
 -   **/apps/frontend/LifeOS-Web**: The frontend of the application, built with Next.js and React. It provides a clean and intuitive interface for interacting with the LifeOS system.
 
+### LifeOS 2.0 Execution Plan - Status: Completed
+
+The initial execution plan for LifeOS 2.0, focusing on the foundational GraphRAG system, indexing, extraction, agentic features, and core observability/safety, has been successfully completed. Details of the implemented tasks can be found in [[docs/10_LifeOS_2.0_Execution_Plan.md|LifeOS 2.0 Execution Plan]].
+
 ## Build and Test Commands
 
 ### Backend (`/apps/backend/lifeos-rag-api`)
