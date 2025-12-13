@@ -8,6 +8,8 @@ from .llm_config import get_llm
 # Load environment variables
 load_dotenv()
 
+EXTRACTION_PROMPT_VERSION = "1.0.0"
+
 # --- Custom Prompt for Confidence Score ---
 EXTRACTION_PROMPT_TEMPLATE = """
 You are a highly intelligent knowledge graph builder.

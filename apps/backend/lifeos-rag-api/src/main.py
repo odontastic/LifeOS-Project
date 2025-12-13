@@ -2,6 +2,7 @@ import os
 import uuid
 import json
 import logging
+import time # Import the time module
 from datetime import datetime
 from typing import Dict, Any
 
@@ -27,6 +28,7 @@ from .safety import detect_crisis_language, DEFAULT_DISCLAIMER
 from .temporal import parse_time_references
 from .router import get_router_query_engine
 from .synthesizer import FrameworkSynthesizer
+from .reconciliation import DataReconciler # Import DataReconciler
 
 # --- Logging Setup ---
 logging.basicConfig(
@@ -120,6 +122,7 @@ async def health_check():
 
 @app.post("/api/ingest")
 async def ingest_data(request: IngestRequest):
+    start_time = time.time() # Start timer
     logger.info("Received ingest request")
     CONFIDENCE_THRESHOLD = 0.65
     try:
@@ -160,15 +163,22 @@ async def ingest_data(request: IngestRequest):
         if deduped_rels:
             index.insert_relationships(deduped_rels)
 
+        end_time = time.time() # End timer
+        duration = (end_time - start_time) * 1000 # Duration in ms
+        logger.info(f"Ingest request completed in {duration:.2f} ms. Ingested {len(deduped_nodes)} nodes and {len(deduped_rels)} relationships.")
+
         return {
             "message": f"Successfully ingested {len(deduped_nodes)} nodes and {len(deduped_rels)} relationships."
         }
     except Exception as e:
-        logger.error(f"Ingestion failed: {e}", exc_info=True)
+        end_time = time.time() # End timer even on error
+        duration = (end_time - start_time) * 1000 # Duration in ms
+        logger.error(f"Ingestion failed in {duration:.2f} ms: {e}", exc_info=True)
         return {"error": str(e)}
 
 @app.post("/api/query")
 async def query(request: QueryRequest):
+    start_time = time.time() # Start timer
     logger.info(f"Received query: {request.query[:50]}...")
     try:
         if detect_crisis_language(request.query):
@@ -176,8 +186,24 @@ async def query(request: QueryRequest):
 
         time_filters = parse_time_references(request.query)
         
+        llama_filters = []
+        if "start_date" in time_filters:
+            llama_filters.append(MetadataFilter(key="created_at", operator=">=", value=time_filters["start_date"]))
+        if "end_date" in time_filters:
+            llama_filters.append(MetadataFilter(key="created_at", operator="<=", value=time_filters["end_date"]))
+
+        # Apply semantic filters
+        if "life_domain" in time_filters:
+            llama_filters.append(MetadataFilter(key="life_domain", operator="==", value=time_filters["life_domain"]))
+        if "life_stage" in time_filters:
+            llama_filters.append(MetadataFilter(key="life_stage", operator="==", value=time_filters["life_stage"]))
+        if "episode" in time_filters:
+            llama_filters.append(MetadataFilter(key="episode", operator="==", value=time_filters["episode"]))
+        
+        final_llama_filters = MetadataFilters(filters=llama_filters) if llama_filters else None
+
         graph_index = get_property_graph_index()
-        graph_query_engine = graph_index.as_query_engine(include_text=True)
+        graph_query_engine = graph_index.as_query_engine(include_text=True, filters=final_llama_filters)
 
         qdrant_client = QdrantClient(url=QDRANT_URL)
         resource_store = QdrantVectorStore(client=qdrant_client, collection_name="lifeos_resources")
@@ -190,6 +216,10 @@ async def query(request: QueryRequest):
         synthesizer = FrameworkSynthesizer()
         mental_model = synthesizer.synthesize(response.response)
 
+        end_time = time.time() # End timer
+        duration = (end_time - start_time) * 1000 # Duration in ms
+        logger.info(f"Query request completed in {duration:.2f} ms.")
+
         return {
             "response": mental_model,
             "time_filters": time_filters,
@@ -199,7 +229,9 @@ async def query(request: QueryRequest):
             ]
         }
     except Exception as e:
-        logger.error(f"Query failed: {e}", exc_info=True)
+        end_time = time.time() # End timer even on error
+        duration = (end_time - start_time) * 1000 # Duration in ms
+        logger.error(f"Query failed in {duration:.2f} ms: {e}", exc_info=True)
         return {"error": str(e)}
 
 @app.post("/api/flows/start")
@@ -274,3 +306,26 @@ async def log_feedback(request: FeedbackRequest):
 @app.get("/")
 async def root():
     return {"message": "LifeOS RAG API is running (Optimized)."}
+
+@app.get("/api/metrics")
+async def get_metrics():
+    """
+    Returns basic metrics for monitoring, including Neo4j node count and Qdrant point counts.
+    """
+    metrics = {}
+    try:
+        reconciler = DataReconciler()
+        
+        # Neo4j Node Count
+        neo4j_ids = reconciler.get_neo4j_node_ids()
+        metrics["neo4j_node_count"] = len(neo4j_ids)
+
+        # Qdrant Point Counts
+        metrics["qdrant_lifeos_notes_count"] = len(reconciler.get_qdrant_point_ids("lifeos_notes"))
+        metrics["qdrant_lifeos_resources_count"] = len(reconciler.get_qdrant_point_ids("lifeos_resources"))
+
+    except Exception as e:
+        logger.error(f"Failed to retrieve metrics: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve metrics: {e}")
+
+    return metrics

@@ -3,6 +3,8 @@ from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 import uuid
 
+SCHEMA_VERSION = "1.0.0"
+
 # --- Shared Base Model ---
 
 class BaseNode(BaseModel):
