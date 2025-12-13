@@ -360,3 +360,16 @@ I am awaiting your next instruction.The LifeOS project utilizes a diverse set of
 *   **Local Data:** SQLite (with SQLCipher or alternative encryption) is excellent for local data on Android.
 
 **In summary, the project can be made free for commercial and personal use on Linux and Android, but requires critical changes to the database stack (Neo4j and Redis alternatives) and careful consideration of SQLCipher's licensing for Android.** The backend is well-suited, but a dedicated mobile frontend would require new development.
+I'm unable to locate the file `LifeOS_Agentic_AI_Coder_Master_Instructions_25-12-13.md` in the `docs/` directory.
+
+Could you please confirm the exact filename and its correct path?I have updated the To-Do list (`System/AI-Context/session_tasks.md`) to fully align with the `LifeOS_Agentic_AI_Coder_Master_Instructions_25-12-13.md`.
+
+**Key updates to the To-Do list:**
+
+*   **Database Choices:** Tasks [P_02] (Implement database models) and [P_21] (Implement Latent Semantic Graph) have been updated to explicitly use **ArangoDB** for graph data, replacing Neo4j. Task [P_25] (Enhance Database Security) has been updated to remove Redis-specific tasks and focus on Qdrant and ArangoDB.
+*   **Event-First Design:** Task [P_04] has been updated to specify implementing the `EmotionContextBus` using a **SQLite-backed append-only event log** as per the Master Instructions.
+*   **Non-Goals Compliance:** Task [P_28] (Android Development Plan) has been **cancelled**, as mobile-native apps are explicitly defined as a non-goal in the Master Instructions.
+
+The To-Do list now accurately reflects the project's updated technical and architectural direction.
+
+I am awaiting your next instruction.
