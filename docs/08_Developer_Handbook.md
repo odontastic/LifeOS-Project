@@ -4,7 +4,7 @@ created Chat GPT (Perplexity assist) 2025-12-11
 
 # 🛠️ **Developer Handbook for the PARA + GTD + Zettelkasten System**
 
-A unified schema, workflow, and execution guide for building the “LifeOS” personal knowledge and productivity system.
+A unified schema, workflow, and execution guide for building the “LifeOS” personal knowledge and productivity system, integrating **PARA**, **GTD**, **Zettelkasten**, and **Therapeutic Journaling**.
 
 ---
 
@@ -13,7 +13,7 @@ A unified schema, workflow, and execution guide for building the “LifeOS” pe
 This document defines **all data models, operations, workflows, bridging logic, and expectations** required for an AI agent to:
 
 * Parse user input
-* Place it in the correct system layer (PARA/GTD/Zettelkasten)
+* Place it in the correct system layer (PARA/GTD/Zettelkasten/Therapeutic)
 * Create/update the unified graph-based knowledge system
 * Propose tasks, projects, zettels, reflections, and links
 * Maintain long-term order and consistency
@@ -42,6 +42,14 @@ This *is* the “source of truth” for the AI developer.
 * **Zettels:** atomic notes
 * **Links:** semantic relationships (bidirectional)
 * **Reflections:** higher-level insights
+
+### Therapeutic Graph (Coaching Module)
+
+* **Journal Objects:** Entities representing emotional states
+* **Nodes:** Emotion, Belief, Trigger, CopingMechanism, Episode
+* **Flows:** Interactive coaching sessions (CBT, various frameworks)
+* **GTD Dashboard:** Visual overview of tasks, contexts, and horizons for GTD workflow
+* **Prism Clarity Studio:** AI‑powered decision‑making and training engine built on the knowledge base and a library of mental models
 
 ---
 
@@ -181,6 +189,58 @@ These should be treated as *JSON-like TypeScript interfaces*.
 
 ---
 
+## 3.8 **Therapeutic Nodes (Coaching Module)**
+
+These entities capture the emotional and psychological context of the user.
+
+### **JournalEntry**
+```
+{
+  id: string,
+  type: "journal_entry",
+  body: string,
+  mood_rating: number, // 1-10
+  emotions: string[],  // IDs of Emotion nodes
+  beliefs: string[],   // IDs of Belief nodes
+  created_at: timestamp
+}
+```
+
+### **Emotion**
+```
+{
+  id: string,
+  type: "emotion",
+  name: string,        // e.g. "Anxiety", "Joy"
+  intensity: number,
+  valence: "positive" | "negative" | "neutral",
+  related_entries: string[]
+}
+```
+
+### **Belief**
+```
+{
+  id: string,
+  type: "belief",
+  statement: string,   // e.g. "I must be perfect"
+  status: "limiting" | "empowering",
+  related_entries: string[]
+}
+```
+
+### **Trigger**
+```
+{
+  id: string,
+  type: "trigger",
+  description: string,
+  related_emotions: string[]
+}
+```
+
+---
+
 # 4. 🔗 **Bridging Rules (Critical Execution Logic)**
 
 These rules *must* be executed automatically by the AI agent whenever interpreting user content.
@@ -244,6 +304,22 @@ For each **Area**:
 
 ---
 
+## 4.3 **Therapeutic Bridging (Journal → Insight)**
+
+When a **JournalEntry** reveals a recurring pattern or significant realization:
+
+1. **Extract Beliefs**: Identify core beliefs underlying the entry.
+2. **Create Zettel**: If a belief is identified as a "limiting belief" or "key insight", create a Zettel to formally track it in the Zettelkasten.
+3. **Propose Action**: If a **CopingMechanism** is identified, propose it as a potential **Task** or **Resource** link.
+
+**Example Logic:**
+> IF `JournalEntry` mentions "I feel overwhelmed by Project X" 
+> AND `Project X` exists 
+> THEN Link `JournalEntry` -> `Project X`
+> AND Suggest `Task`: "Break down Project X into smaller steps"
+
+---
+
 # 5. 🧠 **Session Expectations for the AI Agent**
 
 For **every** user query:
@@ -255,6 +331,9 @@ Label which system layers are relevant:
 * PARA
 * GTD
 * Zettelkasten
+* Therapeutic
+* GTD Dashboard
+* Prism Clarity Studio
 
 ### 2️⃣ Suggest Data Structure or State Changes
 
@@ -291,6 +370,8 @@ Give these directly to your AI developer:
    * zettel
    * goal
    * reflection
+   * GTD dashboard element
+   * Prism Clarity Studio request
 
 3. Follow the bridging rules without exception.
 

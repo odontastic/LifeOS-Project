@@ -7,12 +7,15 @@ import React, { useState, useEffect } from 'react';
 
 export default function JournalView() {
   const [journals, setJournals] = useState<Record<string, any>>({});
-  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentDate, setCurrentDate] = useState('');
 
   useEffect(() => {
+    setCurrentDate(new Date().toISOString().split('T')[0]);
     const saved = localStorage.getItem('marriageEqJournals');
     if (saved) setJournals(JSON.parse(saved));
   }, []);
+
+
 
   const currentEntry = journals[currentDate] || {};
 

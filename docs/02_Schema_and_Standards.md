@@ -408,9 +408,15 @@ tags: [journal, daily]
 
 ---
 
-## 12. RAG API Schema Standards
+## 12. Unified Knowledge Graph Standards
 
-### Node Types
+The LifeOS uses a graph-based data model (RAG API) that integrates two distinct but connected modules: the **Therapeutic Module** (for coaching and emotional feedback) and the **Productivity Module** (for PARA, GTD, and Zettelkasten).
+
+### 12.1 Therapeutic Module (Coaching)
+
+This module focuses on emotional state tracking, belief systems, and psychological patterns.
+
+#### Node Types
 - **User**: Individual authoring journal entries
 - **JournalEntry**: Single journal entry
 - **Emotion**: Specific emotion mentioned or inferred
@@ -422,7 +428,7 @@ tags: [journal, daily]
 - **Pattern**: Recurring theme or behavior
 - **SessionSummary**: Summary of user interaction
 
-### Relationship Types
+#### Relationship Types
 - **AUTHORED_BY**: `(JournalEntry)-[:AUTHORED_BY]->(User)`
 - **RELATES_TO**: Connects related nodes
 - **TRIGGERED_BY**: `(Emotion)-[:TRIGGERED_BY]->(Trigger)`
@@ -431,26 +437,38 @@ tags: [journal, daily]
 - **MENTIONS**: `(JournalEntry)-[:MENTIONS]->(Belief)`
 - **SUMMARIZES**: `(SessionSummary)-[:SUMMARIZES]->(JournalEntry)`
 
-### Node Properties
-- **created_at**: Timestamp of node creation
-- **life_domain**: Area of life (e.g., "Work", "Relationships")
-- **life_stage**: Life stage (e.g., "College", "Adulthood")
-- **stability**: "Stable" or "Transient"
-- **confidence**: Confidence score (0.0 to 1.0)
+### 12.2 Productivity Module (PARA + GTD)
 
-### API Endpoints
-- **POST /api/ingest**: Process new text and extract entities
+This module manages actionable work and knowledge. For the complete implementation guide and strict schema usage, refer to [[docs/08_Developer_Handbook.md]].
+
+#### Node Types
+- **Zettel**: Atomic knowledge note (`type: zettel`)
+- **Project**: Goal-oriented outcome (`type: project`)
+- **Area**: Ongoing responsibility (`type: area`)
+- **Resource**: Reference material (`type: resource`)
+- **Task**: Concrete next action (`type: task`)
+- **Reflection**: Periodical review note (`type: reflection`)
+
+#### Relationship Logic
+- **Project → Task**: `(Project)-[:HAS_ACTION]->(Task)`
+- **Area → Project**: `(Area)-[:RESPONSIBLE_FOR]->(Project)`
+- **Zettel ↔ Zettel**: `(Zettel)-[:RELATES_TO]->(Zettel)` (Bidirectional)
+- **Zettel → Project**: `(Zettel)-[:SUPPORTS]->(Project)`
+
+### 12.3 API Endpoints & Safety
+
+#### API Endpoints
+- **POST /api/ingest**: Process new text and extract entities (auto-detects module)
 - **POST /api/query**: Query the knowledge graph
 - **POST /api/flows/start**: Initialize coaching flow
 - **POST /api/flows/advance**: Advance coaching flow
 - **POST /api/feedback**: Log user feedback
 - **GET /**: Health check
 
-### Safety Features
-- Crisis language detection
-- Emergency disclaimers
-- Safe content processing
-- User protection mechanisms
+#### Safety Features
+- **Crisis Language Detection**: The `safety.py` module scans all inputs for severe distress.
+- **Emergency Discaimers**: Automated responses when crisis patterns are detected.
+- **Privacy First**: All journal data is treated with maximum sensitivity.
 
 ---
 
