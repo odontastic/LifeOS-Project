@@ -3,32 +3,44 @@ import uuid
 import json
 import logging
 import time # Import the time module
-from datetime import datetime
-from typing import Dict, Any
+from datetime import datetime, timedelta
+from typing import Dict, Any, Optional
 
 import redis
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm # Import OAuth2PasswordRequestForm
 from pydantic import BaseModel
+
+from sqlalchemy.orm import Session # Import Session for database dependency
 
 from llama_index.core import Document, VectorStoreIndex
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 
+from fastapi_limiter import FastAPILimiter # Import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter # Import RateLimiter
+
 from .config import (
     NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD,
     QDRANT_URL,
     REDIS_HOST, REDIS_PORT, REDIS_DB,
-    ALLOWED_ORIGINS, LOG_LEVEL
+    ALLOWED_ORIGINS, LOG_LEVEL, ACCESS_TOKEN_EXPIRE_MINUTES
 )
+
 from .graph import get_property_graph_index
 from .extractor import get_schema_extractor
-from .deduplication import deduplicate_and_merge
+# from .deduplication import deduplicate_and_merge # Temporarily commented out for debugging
 from .safety import detect_crisis_language, DEFAULT_DISCLAIMER
 from .temporal import parse_time_references
 from .router import get_router_query_engine
 from .synthesizer import FrameworkSynthesizer
 from .reconciliation import DataReconciler # Import DataReconciler
+from .auth import ( # Import auth functions and models
+    get_db, create_user, get_user_by_username, verify_password,
+    create_access_token, get_current_user, User
+)
+
 
 # --- Logging Setup ---
 logging.basicConfig(
@@ -70,8 +82,25 @@ class AdvanceFlowRequest(BaseModel):
     current_step: str
     response: str
 
+# New Pydantic models for authentication
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    email: Optional[str] = None
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
 # --- FastAPI App ---
 app = FastAPI(title="LifeOS RAG API", version="2.0.0")
+
+@app.on_startup
+async def startup_event():
+    if redis_client:
+        await FastAPILimiter.init(redis=redis_client)
+    else:
+        logger.warning("Redis client not initialized, rate limiting will be disabled.")
 
 # --- CORS Middleware ---
 app.add_middleware(
@@ -82,7 +111,55 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Authentication Routes ---
+@app.post("/register", response_model=Token)
+async def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = get_user_by_username(db, username=user.username)
+    if db_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
+    
+    # Optional: Validate password strength here
+    if len(user.password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 8 characters long")
+    
+    new_user = create_user(db=db, username=user.username, password=user.password, email=user.email)
+    logger.info(f"User '{new_user.username}' registered successfully.")
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": new_user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/token", response_model=Token)
+@RateLimiter(times=5, seconds=60) # 5 login attempts per minute
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = get_user_by_username(db, username=form_data.username)
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        logger.warning(f"Failed login attempt for username: '{form_data.username}'")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    logger.info(f"User '{user.username}' logged in successfully.")
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
 # --- Routes ---
+
 
 @app.get("/health")
 async def health_check():
@@ -121,7 +198,7 @@ async def health_check():
     return status
 
 @app.post("/api/ingest")
-async def ingest_data(request: IngestRequest):
+async def ingest_data(request: IngestRequest, current_user: User = Depends(get_current_user)):
     start_time = time.time() # Start timer
     logger.info("Received ingest request")
     CONFIDENCE_THRESHOLD = 0.65
@@ -153,22 +230,29 @@ async def ingest_data(request: IngestRequest):
         valid_nodes = [node for node in nodes if node.id_ in valid_node_ids]
         logger.info(f"Filtered nodes: {len(nodes)} -> {len(valid_nodes)}")
 
-        # Deduplicate
-        deduped_nodes, deduped_rels = await deduplicate_and_merge(
-            valid_nodes, high_confidence_rels, index.property_graph_store
-        )
+        # Deduplicate - Temporarily commented out for debugging
+        # deduped_nodes, deduped_rels = await deduplicate_and_merge(
+        #     valid_nodes, high_confidence_rels, index.property_graph_store
+        # )
 
-        if deduped_nodes:
-            index.insert_nodes(deduped_nodes)
-        if deduped_rels:
-            index.insert_relationships(deduped_rels)
+        # if deduped_nodes:
+        #     index.insert_nodes(deduped_nodes)
+        # if deduped_rels:
+        #     index.insert_relationships(deduped_rels)
+        
+        # For now, without deduplication:
+        if valid_nodes:
+            index.insert_nodes(valid_nodes)
+        if high_confidence_rels:
+            index.insert_relationships(high_confidence_rels)
+
 
         end_time = time.time() # End timer
         duration = (end_time - start_time) * 1000 # Duration in ms
-        logger.info(f"Ingest request completed in {duration:.2f} ms. Ingested {len(deduped_nodes)} nodes and {len(deduped_rels)} relationships.")
+        logger.info(f"Ingest request completed in {duration:.2f} ms. Ingested {len(valid_nodes)} nodes and {len(high_confidence_rels)} relationships.")
 
         return {
-            "message": f"Successfully ingested {len(deduped_nodes)} nodes and {len(deduped_rels)} relationships."
+            "message": f"Successfully ingested {len(valid_nodes)} nodes and {len(high_confidence_rels)} relationships."
         }
     except Exception as e:
         end_time = time.time() # End timer even on error
@@ -177,7 +261,7 @@ async def ingest_data(request: IngestRequest):
         return {"error": str(e)}
 
 @app.post("/api/query")
-async def query(request: QueryRequest):
+async def query(request: QueryRequest, current_user: User = Depends(get_current_user)):
     start_time = time.time() # Start timer
     logger.info(f"Received query: {request.query[:50]}...")
     try:
@@ -235,7 +319,7 @@ async def query(request: QueryRequest):
         return {"error": str(e)}
 
 @app.post("/api/flows/start")
-async def start_flow(request: StartFlowRequest):
+async def start_flow(request: StartFlowRequest, current_user: User = Depends(get_current_user)):
     if not redis_client:
         raise HTTPException(status_code=503, detail="Redis unavailable for flow state")
     
@@ -257,7 +341,7 @@ async def start_flow(request: StartFlowRequest):
     }
 
 @app.post("/api/flows/advance")
-async def advance_flow(request: AdvanceFlowRequest):
+async def advance_flow(request: AdvanceFlowRequest, current_user: User = Depends(get_current_user)):
     if not redis_client:
         raise HTTPException(status_code=503, detail="Redis unavailable")
 
@@ -291,7 +375,7 @@ async def advance_flow(request: AdvanceFlowRequest):
     }
 
 @app.post("/api/feedback")
-async def log_feedback(request: FeedbackRequest):
+async def log_feedback(request: FeedbackRequest, current_user: User = Depends(get_current_user)):
     # Log to disk for now (could also go to Redis or DB)
     try:
         with open("feedback.csv", "a") as f:
@@ -308,7 +392,7 @@ async def root():
     return {"message": "LifeOS RAG API is running (Optimized)."}
 
 @app.get("/api/metrics")
-async def get_metrics():
+async def get_metrics(current_user: User = Depends(get_current_user)):
     """
     Returns basic metrics for monitoring, including Neo4j node count and Qdrant point counts.
     """

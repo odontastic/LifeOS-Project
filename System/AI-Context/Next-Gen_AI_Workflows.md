@@ -48,14 +48,34 @@ The Prompt: "Review my plan for [Project]. Cross-reference this with my 'Crisis'
 
 Why it works: It uses your own historical data (Lessons Learned) to predict and prevent future failures.
 
-C. The "Socratic Mirror" (Emotional Intelligence)
-The Problem: You mentioned a goal to improve EQ and relationships. Journaling is good, but often one-sided.
+C. The "Socratic Mirror" (Emotional Intelligence & Emotion Engine)
+The Problem: Journaling is good, but often one-sided. We aim to cultivate emotional awareness, emotional IQ, solicitude, and provide evidence-based emotional support, leveraging neuropsychology for lasting behavior change.
 
-The AI Workflow: When you write a reflection in your Family Area regarding a conflict or interaction.
+The AI Workflow: This workflow integrates the "Inner Palette" for emotional data capture and the "Emotion Engine" for intelligent analysis and coaching.
 
-The Prompt: "I just wrote this journal entry about an argument with my wife. acting as an unbiased, empathetic therapist, read this. Do not validate me. Instead, point out 2 cognitive distortions in my thinking and suggest 3 questions I should ask her to understand her perspective better."
+1.  **Emotional Capture (Inner Palette):** When you experience an emotion, you use the "Inner Palette" (accessible from any page/card) to log your feelings using multi-modal inputs:
+    *   Categorical (Plutchik's Wheel, e.g., Joy, Sadness)
+    *   Dimensional (Valence-Arousal sliders)
+    *   Somatic (Body map, sensation tags)
+    *   Narrative (Free text description of the event/feelings)
+    This creates a rich dataset for the Emotion Engine.
 
-Why it works: It turns passive journaling into active emotional training.
+2.  **AI-Powered Analysis & Coaching (Emotion Engine):** The AI, acting as an unbiased, empathetic "neuro-coach" and mentor for emotional growth, processes this input (and other contextual LifeOS data like calendar events, tasks, journal entries) to provide insights and guide interventions.
+
+    *   **Prompt Examples:**
+        *   "I just wrote this journal entry about an argument with my wife. Acting as an unbiased, empathetic neuro-coach, read this. Do not validate me. Instead, point out 2 cognitive distortions in my thinking and suggest 3 questions I should ask her to understand her perspective better."
+        *   "From your recent Inner Palette entries, I'm noticing a pattern of 'frustration' whenever you engage with Project X. What are you feeling about this hesitation or blockage?" (Leveraging 'Emotion Drives Decision-Making' principle).
+        *   "You've expressed 'overwhelm' today. Let's break down one source of this feeling into a 'tiny habit' you can do in <2 minutes. If you get home, then you will immediately [specific micro-action]." (Leveraging 'PFC Has Limits' principle).
+        *   "You successfully completed your 'presence with wife' task this evening despite feeling 'tired.' That's a micro-win! How does it feel to reinforce this connection?" (Leveraging 'Repetition & Reward' for dopamine loop).
+        *   "Before your difficult meeting tomorrow, let's try a quick visualization. Mentally rehearse how you want to feel and respond." (Leveraging 'Imagination ≈ Action' principle).
+    *   **Proactive Interventions:** Based on logged emotions and identified patterns, the Engine will offer:
+        *   **Context-aware prompts:** Before recurring difficult events, after potential triggers.
+        *   **Emotion "blind spot" detection:** Gently introducing new vocabulary or challenging under-reported emotions.
+        *   **"Emotion recipes":** Suggesting micro-practices (e.g., box breathing for anger, walking for sadness) linked to specific emotional states.
+        *   **Cognitive Reappraisal:** Guiding reframing exercises.
+        *   **Perspective-Taking:** For relationship goals.
+
+Why it works: It transforms passive emotional logging into active emotional training and growth. By integrating neuropsychology, it provides guidance that works *with* your biology, fostering sustainable change and deep self-awareness. It moves beyond just tracking to cultivate emotional intelligence, resilience, and solicitude. This module also provides contextual awareness to the "Crisis Mode" and facilitates post-crisis reflection.
 
 D. The "Progressive Summarization" Agent
 The Problem: We hoard articles but never process them into knowledge.

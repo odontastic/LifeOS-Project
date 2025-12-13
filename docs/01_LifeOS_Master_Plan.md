@@ -350,6 +350,10 @@ Use when: Tired but want to make progress
 - Identify orphaned notes (no connections)
 - Recommend MOC updates
 
+**6. Emotional Intelligence & Well-being (Inner Palette & Emotion Engine)**
+- **Inner Palette**: A multi-modal user interface for capturing and logging emotional states (e.g., Plutchik's Wheel, valence-arousal sliders, somatic maps, narrative input). It serves as the primary data input system for emotional experiences.
+- **Emotion Engine**: The underlying AI intelligence that processes emotional data from the Inner Palette. It applies neuropsychological principles, psychology theories, and evidence-based techniques (like CBT and DBT) to provide personalized coaching, identify emotional patterns, and offer proactive interventions. This engine aims to cultivate emotional awareness, support emotional regulation, and integrate with Crisis Mode for comprehensive well-being support.
+
 ---
 
 ## Success Metrics

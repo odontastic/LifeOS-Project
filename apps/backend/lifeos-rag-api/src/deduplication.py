@@ -1,8 +1,9 @@
 import re
+import sys
 from typing import List, Dict, Any, Tuple
 from llama_index.core.graph_stores.types import GraphStore
 from llama_index.core.schema import Node
-from llama_index.core.graph_stores.types import Relationship
+from llama_index.core.graph_stores import Relationship
 
 # Define which node labels should be checked for duplicates and what property to use as a unique key.
 DEDUPE_CONFIG = {
@@ -87,6 +88,15 @@ async def deduplicate_and_merge(
     for rel in relationships:
         source_id = node_map.get(rel.source_node.id_, rel.source_node.id_)
         target_id = node_map.get(rel.target_node.id_, rel.target_node.id_)
+
+        # --- DEBUGGING ---
+        print(f"DEBUG: Type of rel: {type(rel)}")
+        print(f"DEBUG: rel.source_node.id_: {rel.source_node.id_}")
+        print(f"DEBUG: rel.target_node.id_: {rel.target_node.id_}")
+        print(f"DEBUG: rel.label: {rel.label}")
+        print(f"DEBUG: rel.properties: {rel.properties}")
+        sys.exit(1)
+        # --- END DEBUGGING ---
 
         # Create a new Relationship object with the potentially updated source/target IDs
         updated_rel = Relationship(

@@ -1,24 +1,65 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any
 import dateparser
+import json
+import logging
+
+from llama_index.core.llms import ChatMessage, MessageRole
+from .llm_config import get_llm # Assuming get_llm returns a standard LLM client
+
+logger = logging.getLogger(__name__)
+
+# Define possible semantic entities to extract
+SEMANTIC_ENTITIES = ["life_domain", "life_stage", "episode"]
+
+SEMANTIC_EXTRACTION_PROMPT = """
+You are an expert at identifying and extracting semantic filters from natural language queries.
+Your task is to extract relevant concepts such as 'life_stage', 'life_domain', or 'episode' from the user's query.
+
+Respond with a JSON object where keys are the semantic filter types and values are the extracted concepts.
+If no relevant semantic filters are found, return an empty JSON object {{}}.
+Do not include any other text or explanation.
+
+Example:
+Query: "What have I learned about relationships in college?"
+Response: {{"life_domain": "Relationships", "life_stage": "College"}}
+
+Query: "Show me my journal entries about work during my first job."
+Response: {{"life_domain": "Work", "episode": "First Job"}}
+
+Query: "Summarize my feelings last week."
+Response: {{}}
+
+Query: "{query}"
+Response: 
+"""
 
 def extract_semantic_filters_with_llm(query: str) -> Dict[str, Any]:
     """
-    (Placeholder) Uses an LLM to extract non-date, semantic filters from a query.
+    Uses an LLM to extract non-date, semantic filters from a query.
     
     For example, "in college" -> {"life_stage": "College"}
-    
-    This needs to be implemented.
     """
-    # TODO: Use a focused LLM call to extract entities like 'life_stage' or 'episode'
-    # from the user's query to use as filters.
-    semantic_filters = {}
-    if "in college" in query.lower():
-        semantic_filters["life_stage"] = "College"
-    if "during my first job" in query.lower():
-        semantic_filters["episode"] = "First Job"
-        
-    return semantic_filters
+    llm = get_llm()
+    prompt = SEMANTIC_EXTRACTION_PROMPT.format(query=query)
+    
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(role=MessageRole.USER, content=prompt),
+    ]
+
+    try:
+        response = llm.chat(messages)
+        # Assuming the LLM responds with a JSON string
+        semantic_filters = json.loads(response.message.content)
+        # Validate extracted entities against SEMANTIC_ENTITIES
+        valid_filters = {k: v for k, v in semantic_filters.items() if k in SEMANTIC_ENTITIES}
+        if len(valid_filters) != len(semantic_filters):
+            logger.warning(f"LLM extracted invalid semantic filters: {semantic_filters}. Validated: {valid_filters}")
+        return valid_filters
+    except Exception as e:
+        logger.error(f"Failed to extract semantic filters with LLM: {e}", exc_info=True)
+        return {}
 
 def parse_time_references(query: str) -> Dict[str, Any]:
     """

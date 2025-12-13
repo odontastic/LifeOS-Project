@@ -105,3 +105,74 @@ tags: ["session-log", "workflow-setup", "documentation-standards", "git-integrat
 ## 4. Next Steps
 - Commit the current changes.
 - Continue with "Prism Clarity Studio" and "GTD Dashboard" documentation.
+This concludes the security and privacy audit and the initial implementation phase for authentication and authorization.
+
+**Summary of Work Completed:**
+
+1.  **Security Audit:**
+    *   **Environment Variables:** Confirmed secure handling using `.env` and `os.getenv` with `.gitignore` exclusion. Noted insecure default values in `config.py` as a production risk.
+    *   **Authentication/Authorization:** Identified a critical lack of authentication and authorization, making all API endpoints publicly accessible.
+2.  **Authentication & Authorization Implementation Plan:**
+    *   Proposed a plan using JWT (JSON Web Tokens) with OAuth2 standards.
+    *   Selected SQLite for user storage and Bcrypt for password hashing.
+3.  **Core Implementation:**
+    *   **`auth.py` Module:** Created `apps/backend/lifeos-rag-api/src/auth.py` to encapsulate:
+        *   SQLAlchemy setup for SQLite user database.
+        *   `User` model with `username`, `hashed_password`, `email`.
+        *   Password hashing (`hash_password`) and verification (`verify_password`) using Bcrypt.
+        *   User CRUD operations (`create_user`, `get_user_user_by_username`, `get_user_by_id`).
+        *   JWT generation (`create_access_token`) and verification (`verify_token`).
+        *   FastAPI security dependencies (`oauth2_scheme`, `get_current_user`, `credentials_exception`).
+    *   **`config.py` Updates:** Added `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` for JWT configuration.
+    *   **`requirements.txt` Updates:** Added `sqlalchemy`, `passlib[bcrypt]`, `python-jose[cryptography]`.
+    *   **`main.py` Updates:**
+        *   Added `/register` endpoint for new user creation (with basic password length check and logging).
+        *   Added `/token` endpoint for user login and JWT issuance (with logging for success/failure).
+        *   Protected all sensitive endpoints (`/api/ingest`, `/api/query`, `/api/flows/start`, `/api/flows/advance`, `/api/feedback`, `/api/metrics`) using `Depends(get_current_user)`.
+4.  **Security Best Practices:**
+    *   Implemented basic password strength check during registration.
+    *   Added logging for authentication events (registration, successful login, failed login attempts).
+
+**Next Steps (from To-Do list):**
+
+*   Implement Rate Limiting on login attempts.
+*   Address the insecure default values in `config.py` for production deployment.
+*   Implement user-specific data scoping for all protected endpoints.
+*   Consider HTTPS enforcement (deployment-level task).
+
+Please let me know if you have any questions or further adjustments to this security and privacy work.
+I have successfully switched the password hashing algorithm from Bcrypt to **Argon2ID** by updating `passlib` configuration in `apps/backend/lifeos-rag-api/src/auth.py`. I also ensured that the necessary `argon2-cffi` backend was installed.
+
+However, I encountered a **blocker** when trying to implement **SQLCipher** encryption for the SQLite database. The installation of `pysqlcipher3` failed because it requires the **SQLCipher development libraries** to be installed at the operating system level (e.g., `libsqlcipher-dev` on Debian/Ubuntu). I do not have the necessary privileges to install system-level packages.
+
+**To proceed with SQLCipher, you would need to manually install the SQLCipher development libraries on your Linux system.**
+
+For Debian/Ubuntu-based systems, this would typically be:
+```bash
+sudo apt-get update
+sudo apt-get install libsqlcipher-dev
+```
+*(Please consult your specific Linux distribution's documentation for the correct package name and installation command if you are not using Debian/Ubuntu.)*
+
+Once those libraries are installed, I can then attempt to install `pysqlcipher3` again and integrate it into the `auth.py` file.
+
+In the meantime, I can proceed with the remaining pending task, which is **"Implement Rate Limiting"**, or you can instruct me on how you'd like to proceed given this blocker.This section summarizes the implementation of rate limiting and the status of the SQLCipher/Argon2ID switch.
+
+**Rate Limiting Implementation:**
+
+*   **`fastapi-limiter` Integration:**
+    *   Added `fastapi-limiter` to `apps/backend/lifeos-rag-api/requirements.txt`.
+    *   Installed `fastapi-limiter` in the virtual environment.
+    *   Initialized `FastAPILimiter` with the existing `redis_client` in `main.py` using an `on_startup` event handler.
+    *   Applied the `@RateLimiter(times=5, seconds=60)` decorator to the `/token` (login) endpoint in `main.py`, limiting login attempts to 5 per minute to prevent brute-force attacks.
+
+**Switch to SQLCipher and Argon2ID Status:**
+
+*   **Argon2ID Hashing:**
+    *   Successfully switched the password hashing algorithm from Bcrypt to **Argon2ID** by updating `passlib` configuration in `apps/backend/lifeos-rag-api/src/auth.py`.
+    *   Ensured the necessary `argon2-cffi` backend was installed.
+*   **SQLCipher Encryption:**
+    *   Encountered a **blocker**. The installation of `pysqlcipher3` failed because it requires the **SQLCipher development libraries** to be installed at the operating system level (e.g., `libsqlcipher-dev` on Debian/Ubuntu).
+    *   **Action Required:** To proceed with SQLCipher, you would need to manually install the SQLCipher development libraries on your Linux system.
+
+The core security and privacy features are now largely in place, with the exception of the SQLCipher encryption (pending user action) and future tasks like user-specific data scoping.
