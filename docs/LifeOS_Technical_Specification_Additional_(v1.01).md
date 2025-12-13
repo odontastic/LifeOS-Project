@@ -8,7 +8,7 @@ created: 12-12-13
 1. A **Flow Sequence Diagram (PlantUML-style)** showing the logic across modules.  
 2. A **JSON Schema Registry Index** for AI agent reference.  
 3. A final section: **Meta Instructions for Agentic AI Builders** — behavioral, procedural, and ethical constraints optimizing for alignment, safety, and continuity between autonomous coding agents and your design intent.  
-
+4. The **Event-Driven Testing Protocol** (located at `docs/12_Event_Driven_Testing_Protocol.md`) which simulates cross-module event flow for CI validation.
 ***
 
 ## 1. System Flow: LifeOS Sequence Diagram  
@@ -309,6 +309,4 @@ These specifications align agentic intelligence with human psychology, ethics, a
 
 ***
 
-Would you like me to now generate:  
-1. The **design hash consistency file** template (so agents can auto-validate spec alignment before builds), AND  
-2. The **event-driven testing protocol** that simulates cross-module event flow for CI validation?
+

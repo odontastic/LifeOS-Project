@@ -73,7 +73,9 @@ Currently, there are no formal code style guidelines in place for this project. 
 
 ## Testing Instructions
 
-There are currently no automated tests in this project. All new features and bug fixes should be manually tested to ensure they are working correctly.
+While there are currently no automated unit tests, new features and bug fixes should be manually tested to ensure they are working correctly.
+
+For crucial cross-module interactions and CI validation, refer to the **[Event-Driven Testing Protocol](12_Event_Driven_Testing_Protocol.md)**. This protocol simulates event flow via the EmotionContextBus to ensure modules interact correctly.
 
 For frontend changes, it is recommended to use Playwright to write a verification script to test the changes in a headless browser.
 
