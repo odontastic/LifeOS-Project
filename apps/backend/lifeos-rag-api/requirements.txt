@@ -10,3 +10,4 @@ neo4j
 qdrant-client
 redis
 openai>=1.0.0
+dateparser

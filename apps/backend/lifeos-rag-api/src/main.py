@@ -121,6 +121,7 @@ async def health_check():
 @app.post("/api/ingest")
 async def ingest_data(request: IngestRequest):
     logger.info("Received ingest request")
+    CONFIDENCE_THRESHOLD = 0.65
     try:
         if detect_crisis_language(request.text):
             return {"warning": "Crisis language detected.", "disclaimer": DEFAULT_DISCLAIMER}
@@ -131,10 +132,27 @@ async def ingest_data(request: IngestRequest):
 
         nodes, relationships = await extractor.aextract([document])
         
+        # --- Quality Control ---
+        # Filter relationships based on confidence score
+        high_confidence_rels = [
+            rel for rel in relationships 
+            if rel.properties.get("confidence", 0.0) >= CONFIDENCE_THRESHOLD
+        ]
+        logger.info(f"Filtered relationships: {len(relationships)} -> {len(high_confidence_rels)}")
+
+        # Get the set of nodes that are part of high-confidence relationships
+        valid_node_ids = set()
+        for rel in high_confidence_rels:
+            valid_node_ids.add(rel.source_node.id_)
+            valid_node_ids.add(rel.target_node.id_)
+            
+        # Filter nodes to only include those in valid relationships
+        valid_nodes = [node for node in nodes if node.id_ in valid_node_ids]
+        logger.info(f"Filtered nodes: {len(nodes)} -> {len(valid_nodes)}")
+
         # Deduplicate
-        # Note: deduplicate_and_merge requires the underlying graph store
         deduped_nodes, deduped_rels = await deduplicate_and_merge(
-            nodes, relationships, index.property_graph_store
+            valid_nodes, high_confidence_rels, index.property_graph_store
         )
 
         if deduped_nodes:

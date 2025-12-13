@@ -2,10 +2,40 @@ import os
 from typing import Literal
 from dotenv import load_dotenv
 from llama_index.core.indices.property_graph import SchemaLLMPathExtractor
+from llama_index.core.prompts import PromptTemplate
 from .llm_config import get_llm
 
 # Load environment variables
 load_dotenv()
+
+# --- Custom Prompt for Confidence Score ---
+EXTRACTION_PROMPT_TEMPLATE = """
+You are a highly intelligent knowledge graph builder.
+Given the text below, extract entities and relationships according to the provided schema.
+
+For each extracted relationship, you MUST provide a confidence score on a scale of 0 to 1.
+A score of 1.0 means you are absolutely certain.
+A score of 0.0 means you are completely uncertain.
+
+Output the results as a single, valid JSON array of objects. Each object should have the following format:
+{{
+  "subject": "<name of subject entity>",
+  "relationship": "<name of relationship>",
+  "object": "<name of object entity>",
+  "confidence": <confidence_score_float>
+}}
+
+Do NOT return any objects that you are not reasonably confident about (e.g., confidence < 0.5).
+Do not add any explanations or introductory text. Just the JSON array.
+
+Schema:
+Entities: {entities}
+Relationships: {relations}
+
+Text:
+{text}
+"""
+
 
 # --- Schema Definition ---
 # TODO: Implement Extraction Quality Control. The current implementation ingests
@@ -60,6 +90,7 @@ def get_schema_extractor():
 
     extractor = SchemaLLMPathExtractor(
         llm=llm,
+        prompt_template=EXTRACTION_PROMPT_TEMPLATE,
         possible_entities=entities,
         possible_relations=relations,
         kg_validation_schema=validation_schema,
