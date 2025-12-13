@@ -11,6 +11,10 @@
 - [x] **Resolve Frontend Rendering Issue**: Fixed hydration mismatch in `JournalView` component. Build passed.
 
 - [x] **Security and Privacy Audit**: Completed. No hardcoded occurrences of `OPENROUTER_API_KEY` found (only placeholders/examples). `Life_OS_UI_prototype` is a safe instructional text file.
+- [ ] **GraphRAG Dual-Store Ingest**: Implement `ingest_service.py` with single-pipeline transaction logic for Neo4j+Qdrant syncing.
+- [x] **GraphRAG Schema**: `schemas.py` updated with `BaseNode` (UUID) and full Therapeutic entity set.
+- [ ] **GraphRAG Extractor**: Update `extractor.py` to auto-extract these relationships.
+- [ ] **Router Pipeline**: Implement dynamic routing (Empathy vs Fact) in `router.py`.
 - [x] **Cleanup**: Deleted `Life_OS_UI_prototype` (safe instructional text file).
 
 *These tasks will be tracked in the GTD‑Tasks inbox and moved to the appropriate areas as work progresses.*

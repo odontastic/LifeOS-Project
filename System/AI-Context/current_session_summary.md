@@ -17,5 +17,10 @@
 - **Verification**: `npm run build` passed successfully.
 
 ## 4. Next Steps
-- Commit the current changes.
-- Continue with "Prism Clarity Studio" and "GTD Dashboard" documentation.
+- Commit the current changes. (Done)
+- Proceed with Schema and Pipeline implementation.
+
+## 5. GraphRAG Planning
+- **Architecture Plan**: Created `docs/09_GraphRAG_Architecture.md` detailing the Hybrid Agentic GraphRAG approach.
+- **Key Components**: Defined schema for `Person`, `Note`, `Emotion` entities and the "Structure-Augmented Retrieval" strategy.
+- **Next Actions**: Update `schemas.py` and `extractor.py` to match the new plan.

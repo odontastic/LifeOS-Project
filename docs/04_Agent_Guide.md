@@ -78,6 +78,10 @@ For frontend changes, it is recommended to use Playwright to write a verificatio
 -   **Secrets**: All secrets, such as API keys and database credentials, should be stored in a `.env` file in the `/apps/backend/lifeos-rag-api` directory. A `.env.example` file is provided as a template.
 -   **Crisis Language**: The `safety.py` module in the `lifeos-rag-api` service includes a function to detect crisis language in user input. This should be used to provide a disclaimer and a warning to the user when necessary.
 
+## Future AI Workflows
+
+For an overview of advanced AI workflows planned for LifeOS, refer to [[../System/AI-Context/Next-Gen_AI_Workflows.md|Next-Gen AI Workflows]]. These workflows outline future enhancements for dynamic knowledge generation and synthesis within the system.
+
 ## Commit Message Guidelines
 
 Commit messages should follow the conventional commit format. Each commit message should consist of a header, a body, and a footer.
