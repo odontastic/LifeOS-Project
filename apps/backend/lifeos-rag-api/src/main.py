@@ -22,14 +22,21 @@ from fastapi_limiter import FastAPILimiter # Import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter # Import RateLimiter
 
 from .config import (
+
     NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD,
-    QDRANT_URL,
+
+    QDRANT_URL, ARANGODB_HOST, ARANGODB_DB, ARANGODB_USER, ARANGODB_PASSWORD,
+
     REDIS_HOST, REDIS_PORT, REDIS_DB,
+
     ALLOWED_ORIGINS, LOG_LEVEL, ACCESS_TOKEN_EXPIRE_MINUTES
+
 )
 
-from .graph import get_property_graph_index
+from .graph_db import init_lifeos_graph, insert_vertex, insert_edge # Import ArangoDB specific functions
+
 from .extractor import get_schema_extractor
+
 # from .deduplication import deduplicate_and_merge # Temporarily commented out for debugging
 from .safety import detect_crisis_language, DEFAULT_DISCLAIMER
 from .temporal import parse_time_references
@@ -95,12 +102,21 @@ class Token(BaseModel):
 # --- FastAPI App ---
 app = FastAPI(title="LifeOS RAG API", version="2.0.0")
 
+_arangodb_graph = None # Global variable to hold the ArangoDB graph instance
+
 @app.on_startup
 async def startup_event():
+    global _arangodb_graph # Declare intention to modify the global variable
     if redis_client:
         await FastAPILimiter.init(redis=redis_client)
     else:
         logger.warning("Redis client not initialized, rate limiting will be disabled.")
+    
+    # Initialize ArangoDB graph
+    _arangodb_graph = init_lifeos_graph()
+    if not _arangodb_graph:
+        logger.error("Failed to initialize ArangoDB graph. Graph operations will not work.")
+
 
 # --- CORS Middleware ---
 app.add_middleware(
@@ -207,7 +223,7 @@ async def ingest_data(request: IngestRequest, current_user: User = Depends(get_c
             return {"warning": "Crisis language detected.", "disclaimer": DEFAULT_DISCLAIMER}
 
         extractor = get_schema_extractor()
-        index = get_property_graph_index()
+        # index = get_property_graph_index() # Neo4j-specific, removed
         document = Document(text=request.text)
 
         nodes, relationships = await extractor.aextract([document])
@@ -230,29 +246,34 @@ async def ingest_data(request: IngestRequest, current_user: User = Depends(get_c
         valid_nodes = [node for node in nodes if node.id_ in valid_node_ids]
         logger.info(f"Filtered nodes: {len(nodes)} -> {len(valid_nodes)}")
 
-        # Deduplicate - Temporarily commented out for debugging
-        # deduped_nodes, deduped_rels = await deduplicate_and_merge(
-        #     valid_nodes, high_confidence_rels, index.property_graph_store
-        # )
+        # --- ArangoDB Ingestion ---
+        if not _arangodb_graph:
+            raise HTTPException(status_code=500, detail="ArangoDB graph not initialized.")
 
-        # if deduped_nodes:
-        #     index.insert_nodes(deduped_nodes)
-        # if deduped_rels:
-        #     index.insert_relationships(deduped_rels)
+        # Placeholder for ArangoDB insertion
+        # This part needs detailed implementation to convert LlamaIndex nodes/rels to ArangoDB vertices/edges
+        # For now, just acknowledge the conversion is needed.
+        for node in valid_nodes:
+            # Determine collection name based on node type or metadata
+            # For simplicity, let's use a generic 'LlamaNodes' collection for now
+            vertex_data = {"_key": node.id_, "text": node.text, "metadata": node.metadata}
+            insert_vertex(_arangodb_graph, "LlamaNodes", vertex_data)
         
-        # For now, without deduplication:
-        if valid_nodes:
-            index.insert_nodes(valid_nodes)
-        if high_confidence_rels:
-            index.insert_relationships(high_confidence_rels)
-
+        for rel in high_confidence_rels:
+            # Determine edge collection name
+            edge_collection_name = rel.label if rel.label else "links_to"
+            # Assuming source and target nodes are in 'LlamaNodes'
+            from_key = rel.source_node.node_id
+            to_key = rel.target_node.node_id
+            edge_data = {"properties": rel.properties, "from_collection": "LlamaNodes", "to_collection": "LlamaNodes"}
+            insert_edge(_arangodb_graph, edge_collection_name, from_key, to_key, edge_data)
 
         end_time = time.time() # End timer
         duration = (end_time - start_time) * 1000 # Duration in ms
-        logger.info(f"Ingest request completed in {duration:.2f} ms. Ingested {len(valid_nodes)} nodes and {len(high_confidence_rels)} relationships.")
+        logger.info(f"Ingest request completed in {duration:.2f} ms. Ingested {len(valid_nodes)} nodes and {len(high_confidence_rels)} relationships into ArangoDB.")
 
         return {
-            "message": f"Successfully ingested {len(valid_nodes)} nodes and {len(high_confidence_rels)} relationships."
+            "message": f"Successfully ingested {len(valid_nodes)} nodes and {len(high_confidence_rels)} relationships into ArangoDB."
         }
     except Exception as e:
         end_time = time.time() # End timer even on error
@@ -286,8 +307,22 @@ async def query(request: QueryRequest, current_user: User = Depends(get_current_
         
         final_llama_filters = MetadataFilters(filters=llama_filters) if llama_filters else None
 
-        graph_index = get_property_graph_index()
-        graph_query_engine = graph_index.as_query_engine(include_text=True, filters=final_llama_filters)
+        # --- ArangoDB Graph Query Integration Needed Here ---
+        # This section previously used Neo4j LlamaIndex graph query engine.
+        # Now, it needs to be replaced with ArangoDB-based graph querying.
+        # Options include:
+        # 1. Implement a custom LlamaIndex GraphStore for ArangoDB.
+        # 2. Directly query ArangoDB using AQL and feed results to LlamaIndex's response synthesizer.
+        # For now, we will return a placeholder response for graph queries.
+        # graph_index = get_property_graph_index() # Removed Neo4j specific
+        # graph_query_engine = graph_index.as_query_engine(include_text=True, filters=final_llama_filters)
+
+        # Placeholder for graph_query_engine if ArangoDB is not integrated yet
+        class PlaceholderGraphQueryEngine:
+            async def aquery(self, query_str: str):
+                return Response(response=f"Graph query via ArangoDB not yet implemented for: {query_str}")
+        
+        graph_query_engine = PlaceholderGraphQueryEngine()
 
         qdrant_client = QdrantClient(url=QDRANT_URL)
         resource_store = QdrantVectorStore(client=qdrant_client, collection_name="lifeos_resources")

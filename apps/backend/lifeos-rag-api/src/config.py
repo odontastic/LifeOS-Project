@@ -15,6 +15,12 @@ REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 
+# --- ArangoDB Configuration ---
+ARANGODB_HOST = os.getenv("ARANGODB_HOST", "http://localhost:8529")
+ARANGODB_DB = os.getenv("ARANGODB_DB", "_system")
+ARANGODB_USER = os.getenv("ARANGODB_USER", "root")
+ARANGODB_PASSWORD = os.getenv("ARANGODB_PASSWORD", "root_password") # Change this!
+
 # --- API Configuration ---
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
 API_PORT = int(os.getenv("API_PORT", 8000))
