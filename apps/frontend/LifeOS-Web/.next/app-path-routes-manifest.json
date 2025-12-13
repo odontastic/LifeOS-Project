@@ -1,0 +1,9 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/chat/route": "/api/chat",
+  "/chat/page": "/chat",
+  "/journal/page": "/journal",
+  "/risk-audit/page": "/risk-audit",
+  "/settings/page": "/settings"
+}

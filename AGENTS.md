@@ -12,4 +12,4 @@ tags: ["agent", "entry-point"]
 This `AGENTS.md` file serves as a convenient entry point for AI agents.
 The primary and comprehensive guide for all agent workflows, project standards, and current tasks is located here:
 
-[[docs/04_Agent_Guide.md]]
+[Agent Guide](docs/04_Agent_Guide.md)

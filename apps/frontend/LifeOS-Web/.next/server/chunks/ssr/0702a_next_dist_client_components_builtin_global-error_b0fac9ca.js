@@ -1,0 +1,3 @@
+module.exports=[98471,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(45435);a.n(d("[project]/Applications/LifeOS-Project/apps/frontend/LifeOS-Web/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},77544,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(45435);a.n(d("[project]/Applications/LifeOS-Project/apps/frontend/LifeOS-Web/node_modules/next/dist/client/components/builtin/global-error.js"))},91194,a=>{"use strict";a.i(98471);var b=a.i(77544);a.n(b)}];
+
+//# sourceMappingURL=0702a_next_dist_client_components_builtin_global-error_b0fac9ca.js.map
