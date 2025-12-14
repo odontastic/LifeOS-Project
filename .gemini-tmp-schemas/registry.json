@@ -1,0 +1,29 @@
+{
+  "lifeos_registry_version": "1.01",
+  "entities": {
+    "EmotionEntry": "/schemas/emotion_entry.schema.json",
+    "ContactProfile": "/schemas/contact_profile.schema.json",
+    "TaskItem": "/schemas/task_item.schema.json",
+    "KnowledgeNode": "/schemas/knowledge_node.schema.json",
+    "SystemInsight": "/schemas/system_insight.schema.json"
+  },
+  "relationships": {
+    "EmotionEntry -> ContactProfile": "shared context_tag or linked_contact_id",
+    "EmotionEntry -> TaskItem": "linked_task_id or context_tag correlation",
+    "EmotionEntry -> KnowledgeNode": "emotion_links",
+    "ContactProfile -> SystemInsight": "generated_from reference",
+    "TaskItem -> SystemInsight": "insight link to energy recommendations"
+  },
+  "bus_events": {
+    "emotion_logged": "/events/emotion_logged.json",
+    "calm_compass_action": "/events/calm_action.json",
+    "insight_created": "/events/insight_created.json",
+    "contact_updated": "/events/contact_updated.json"
+  },
+  "ai_contexts": {
+    "pattern_learning": "RAG vector set from EmotionEntry + Journal data",
+    "bias_detection": "CBT trained prompts, AI introspection layer",
+    "relational_pattern": "contact emotional trend recognition",
+    "insight_generation": "context summary logic tree"
+  }
+}

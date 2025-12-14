@@ -1,0 +1,81 @@
+{
+    "title": "EmotionEntry",
+    "properties": {
+        "id": {
+            "title": "Id",
+            "type": "string",
+            "format": "uuid"
+        },
+        "timestamp": {
+            "title": "Timestamp",
+            "type": "string",
+            "format": "date-time"
+        },
+        "primary_emotion": {
+            "title": "Primary Emotion",
+            "type": "string"
+        },
+        "secondary_emotions": {
+            "title": "Secondary Emotions",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "valence": {
+            "title": "Valence",
+            "type": "integer"
+        },
+        "arousal": {
+            "title": "Arousal",
+            "type": "integer"
+        },
+        "intensity": {
+            "title": "Intensity",
+            "type": "integer"
+        },
+        "somatic_markers": {
+            "title": "Somatic Markers",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "context_tags": {
+            "title": "Context Tags",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "notes": {
+            "title": "Notes",
+            "type": "string"
+        },
+        "linked_contact_id": {
+            "title": "Linked Contact Id",
+            "type": "string",
+            "format": "uuid"
+        },
+        "linked_task_id": {
+            "title": "Linked Task Id",
+            "type": "string",
+            "format": "uuid"
+        },
+        "action_prompt": {
+            "title": "Action Prompt",
+            "type": "string"
+        },
+        "processed": {
+            "title": "Processed",
+            "type": "boolean",
+            "default": false
+        }
+    },
+    "required": [
+        "primary_emotion",
+        "valence",
+        "arousal",
+        "intensity"
+    ]
+}

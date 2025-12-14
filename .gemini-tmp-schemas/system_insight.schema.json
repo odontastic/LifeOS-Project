@@ -1,0 +1,48 @@
+{
+    "title": "SystemInsight",
+    "properties": {
+        "id": {
+            "title": "Id",
+            "type": "string",
+            "format": "uuid"
+        },
+        "insight_type": {
+            "title": "Insight Type",
+            "type": "string"
+        },
+        "generated_from": {
+            "title": "Generated From",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "format": "uuid"
+            }
+        },
+        "model_version": {
+            "title": "Model Version",
+            "type": "string"
+        },
+        "confidence": {
+            "title": "Confidence",
+            "type": "integer"
+        },
+        "message": {
+            "title": "Message",
+            "type": "string"
+        },
+        "action_recommendations": {
+            "title": "Action Recommendations",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    },
+    "required": [
+        "insight_type",
+        "generated_from",
+        "model_version",
+        "confidence",
+        "message"
+    ]
+}
