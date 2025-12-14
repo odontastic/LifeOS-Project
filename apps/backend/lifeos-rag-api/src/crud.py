@@ -171,29 +171,25 @@ class SystemInsightModel(Base):
     insight_type = Column(String, nullable=False)  # 'pattern','recommendation','summary'
     generated_from = Column(Text, nullable=False) # Source object UUIDs, stored as JSON string
     model_version = Column(String, nullable=False)
-    confidence = Column(Integer, nullable=False) # Assuming 0-100 for storage as integer
-    message = Column(Text, nullable=False)
-    action_recommendations = Column(Text) # Stored as JSON string
-
+        confidence = Column(Integer, nullable=False) # Assuming 0-100 for storage as integer
+        message = Column(Text, nullable=False)
+        action_recommendations = Column(Text) # Stored as JSON string
+        feedback_rating = Column(Integer) # User feedback rating (e.g., 1-5)
+        feedback_comment = Column(Text) # User feedback comment
+    
         def to_dict(self):
-
             return {
-
                 "id": str(self.id),
-
                 "insight_type": self.insight_type,
-
                 "generated_from": json.loads(self.generated_from) if self.generated_from else None,
-
                 "model_version": self.model_version,
-
                 "confidence": self.confidence,
-
                 "message": self.message,
-
                 "action_recommendations": json.loads(self.action_recommendations) if self.action_recommendations else None,
-
+                "feedback_rating": self.feedback_rating,
+                "feedback_comment": self.feedback_comment,
             }
+    
 
     
 

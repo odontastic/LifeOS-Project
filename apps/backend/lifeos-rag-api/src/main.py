@@ -43,9 +43,10 @@ from .auth import ( # Import auth functions and models
     get_db, create_user, get_user_by_username, verify_password,
     create_access_token, get_current_user, User
 )
-from .schemas import EmotionEntry, EmotionLoggedEvent, EmotionEntry, ContactProfile, TaskItem, KnowledgeNode, SystemInsight # Import Pydantic schemas for entities
-from .crud import create_item, get_item_by_id, get_items, get_db_core_session, EmotionEntryModel # Import CRUD functions and SQLAlchemy models
+from .schemas import EmotionEntry, EmotionLoggedEvent, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, RelationLogRequest # Import Pydantic schemas for entities
+from .crud import create_item, get_item_by_id, get_items, update_item, delete_item, get_db_core_session, EmotionEntryModel, SystemInsightModel, ContactProfileModel, TaskItemModel, KnowledgeNodeModel # Import CRUD functions and SQLAlchemy models
 from .event_bus import event_bus # Import the global event bus instance
+from .calm_compass import process_emotion_entry_for_calm_compass, update_calm_compass_model_with_feedback # Import Calm Compass processing
 
 
 # --- Logging Setup ---
@@ -229,7 +230,30 @@ async def log_emotion(emotion_entry: EmotionEntry, current_user: User = Depends(
     )
     event_bus.emit("emotion_logged", event_payload)
     
+    # Process the emotion with Calm Compass
+    process_emotion_entry_for_calm_compass(db, created_emotion)
+    
     return created_emotion
+
+@app.get("/calm/recommend", response_model=Dict[str, Any])
+async def get_calm_recommendation(current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' requesting Calm Compass recommendation.")
+    
+    # Retrieve the latest SystemInsight of type 'feedback'
+    # In a real scenario, this would be more complex, potentially filtering by user and context.
+    insights = get_items(db, SystemInsightModel, limit=1, filters={"insight_type": "feedback"}) # Need to add filters to get_items if not present
+    
+    if insights:
+        latest_insight = insights[0]
+        return {
+            "message": latest_insight['message'],
+            "action_recommendations": latest_insight['action_recommendations']
+        }
+    else:
+        return {
+            "message": "No specific Calm Compass recommendations available yet. Try logging an emotion first.",
+            "action_recommendations": []
+        }
 
 @app.get("/emotion/retrieve/{emotion_id}", response_model=EmotionEntry)
 async def retrieve_emotion(emotion_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
@@ -239,7 +263,139 @@ async def retrieve_emotion(emotion_id: UUID, current_user: User = Depends(get_cu
     if not emotion_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="EmotionEntry not found")
     
+    
     return emotion_item
+
+@app.post("/calm/feedback")
+async def submit_calm_feedback(
+    feedback: CalmFeedbackRequest, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db_core_session)
+):
+    logger.info(f"User '{current_user.username}' submitting feedback for insight: {feedback.insight_id}")
+    
+    # Retrieve the SystemInsight
+    insight_to_update = get_item_by_id(db, SystemInsightModel, feedback.insight_id)
+    if not insight_to_update:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SystemInsight not found")
+    
+    # Update the SystemInsight with feedback.
+    # We need to construct a Pydantic model for update or pass dict directly to update_item
+    # For now, let's update by creating a new SystemInsight Pydantic model with feedback fields
+    # This assumes update_item can handle partial updates if fields are not provided in schema_item
+    
+    # A more robust update_item would accept a dict and apply changes
+    # For now, we will create a partial schema for update
+    class SystemInsightUpdate(BaseModel):
+        feedback_rating: Optional[int] = None
+        feedback_comment: Optional[str] = None
+        
+    update_data = SystemInsightUpdate(
+        feedback_rating=feedback.rating,
+        feedback_comment=feedback.comment
+    )
+    
+    updated_insight = update_item(db, SystemInsightModel, feedback.insight_id, update_data)
+    
+    if not updated_insight:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update SystemInsight with feedback.")
+    
+    # Integrate Feedback Reinforcement Learning for Calm Compass
+    update_calm_compass_model_with_feedback(feedback.insight_id, feedback.rating)
+    
+    return {"message": "Feedback submitted successfully for SystemInsight."}
+
+@app.post("/relation/log")
+async def log_relation(
+    relation_log: RelationLogRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db_core_session)
+):
+    logger.info(f"User '{current_user.username}' logging relation interaction for contact: {relation_log.contact_id}")
+    
+    contact_to_update = get_item_by_id(db, ContactProfileModel, relation_log.contact_id)
+    if not contact_to_update:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ContactProfile not found")
+
+    # Update last_interaction
+    contact_to_update_obj = ContactProfile(**contact_to_update) # Convert dict to Pydantic for easier manipulation
+    contact_to_update_obj.last_interaction = relation_log.interaction_date
+
+    # Append notes to context_history (if notes exist)
+    if relation_log.notes:
+        if contact_to_update_obj.context_history is None:
+            contact_to_update_obj.context_history = []
+        # Store a simple string or a more structured object with timestamp and notes
+        contact_to_update_obj.context_history.append(str(relation_log.interaction_date) + ": " + relation_log.notes)
+    
+    updated_contact = update_item(db, ContactProfileModel, relation_log.contact_id, contact_to_update_obj)
+    if not updated_contact:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update ContactProfile for relation log.")
+    
+    # Emit event through EmotionContextBus
+    event_payload = ContactUpdatedEvent(
+        contact_id=relation_log.contact_id,
+        name=updated_contact['name'],
+        sentiment_summary=updated_contact['sentiment_summary'],
+        open_loops=updated_contact['open_loops']
+    )
+    event_bus.emit("contact_updated", event_payload)
+    
+    return {"message": f"Relation interaction logged successfully for contact {relation_log.contact_id}."}
+
+@app.post("/task/sync", response_model=TaskItem)
+async def sync_task(task_item: TaskItem, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' syncing task: {task_item.title}")
+    
+    existing_task = get_item_by_id(db, TaskItemModel, task_item.id)
+    
+    if existing_task:
+        synced_task = update_item(db, TaskItemModel, task_item.id, task_item)
+        if not synced_task:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update TaskItem.")
+    else:
+        synced_task = create_item(db, TaskItemModel, task_item)
+    
+    # Emit event through EmotionContextBus
+    event_payload = TaskStateChangedEvent(
+        task_id=task_item.id,
+        status=task_item.status,
+        priority=task_item.priority,
+        energy_requirement=task_item.energy_requirement,
+        context_tags=task_item.context_tags
+    )
+    event_bus.emit("task_state_changed", event_payload)
+    
+    return synced_task
+
+@app.post("/para/update", response_model=KnowledgeNode)
+async def update_para_node(knowledge_node: KnowledgeNode, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' updating PARA node: {knowledge_node.title}")
+    
+    existing_node = get_item_by_id(db, KnowledgeNodeModel, knowledge_node.id)
+    
+    if existing_node:
+        synced_node = update_item(db, KnowledgeNodeModel, knowledge_node.id, knowledge_node)
+        if not synced_node:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update KnowledgeNode.")
+    else:
+        synced_node = create_item(db, KnowledgeNodeModel, knowledge_node)
+        
+    # TODO: Emit event for knowledge node update/creation
+    
+    return synced_node
+
+@app.get("/relation/prompts", response_model=List[str])
+async def get_relation_prompts(current_user: User = Depends(get_current_user)):
+    logger.info(f"User '{current_user.username}' requesting relation prompts.")
+    # Placeholder for AI-generated prompts.
+    # In future, this will integrate with AI Insight Layer and Connection Engine logic.
+    return [
+        "What's one small thing you can do today to strengthen a key relationship?",
+        "Reflect on a recent interaction: what emotion was most dominant for you, and for them?",
+        "Is there an 'open loop' with a contact that needs attention?",
+        "Who haven't you connected with meaningfully in a while?"
+    ]
 
 @app.get("/emotion/analyze", response_model=Dict[str, Any])
 async def analyze_emotion(current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
@@ -262,6 +418,77 @@ async def analyze_emotion(current_user: User = Depends(get_current_user), db: Se
         "primary_emotion_counts": emotion_counts,
         "note": "Full analysis will integrate with AI Insight Layer and provide deeper insights."
     }
+
+@app.post("/contact/create", response_model=ContactProfile)
+async def create_contact(contact_profile: ContactProfile, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' creating contact: {contact_profile.name}")
+    
+    # Save to SQLite
+    created_contact = create_item(db, ContactProfileModel, contact_profile)
+    
+    # Emit event through EmotionContextBus
+    event_payload = ContactUpdatedEvent(
+        contact_id=contact_profile.id,
+        name=contact_profile.name,
+        sentiment_summary=contact_profile.sentiment_summary,
+        open_loops=contact_profile.open_loops
+    )
+    event_bus.emit("contact_updated", event_payload)
+    
+    return created_contact
+
+@app.get("/contact/retrieve/{contact_id}", response_model=ContactProfile)
+async def retrieve_contact(contact_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' retrieving contact: {contact_id}")
+    
+    contact_item = get_item_by_id(db, ContactProfileModel, contact_id)
+    if not contact_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ContactProfile not found")
+    
+    return contact_item
+
+@app.put("/contact/update/{contact_id}", response_model=ContactProfile)
+async def update_contact(
+    contact_id: UUID, 
+    contact_profile: ContactProfile, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db_core_session)
+):
+    logger.info(f"User '{current_user.username}' updating contact: {contact_id}")
+    
+    updated_contact = update_item(db, ContactProfileModel, contact_id, contact_profile)
+    if not updated_contact:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ContactProfile not found")
+    
+    # Emit event through EmotionContextBus
+    event_payload = ContactUpdatedEvent(
+        contact_id=UUID(updated_contact['id']),
+        name=updated_contact['name'],
+        sentiment_summary=updated_contact['sentiment_summary'],
+        open_loops=updated_contact['open_loops']
+    )
+    event_bus.emit("contact_updated", event_payload)
+    
+    return updated_contact
+
+@app.delete("/contact/delete/{contact_id}")
+async def delete_contact(contact_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' deleting contact: {contact_id}")
+    
+    if not delete_item(db, ContactProfileModel, contact_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ContactProfile not found")
+    
+    # Emit event through EmotionContextBus (can be a generic 'deleted' event or contact_updated with status)
+    # For now, a simple contact_updated event could signify a change, possibly with a 'deleted' flag in payload
+    event_payload = ContactUpdatedEvent(
+        contact_id=contact_id,
+        name="Deleted Contact", # Placeholder name for event
+        sentiment_summary="Deleted",
+        open_loops=[]
+    )
+    event_bus.emit("contact_updated", event_payload) # Emitting update event to notify of change
+    
+    return {"message": "ContactProfile deleted successfully."}
 
 @app.post("/api/ingest")
 async def ingest_data(request: IngestRequest, current_user: User = Depends(get_current_user)):

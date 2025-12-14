@@ -1,0 +1,4 @@
+docs: Add Master Instructions and update session summaries
+
+- Added `LifeOS_Agentic_AI_Coder_Master_Instructions_25-12-13.md` which contains the new, authoritative instructions for the AI agent.
+- Updated session summaries to reflect the reading of master instructions and the subsequent update to the To-Do list.
