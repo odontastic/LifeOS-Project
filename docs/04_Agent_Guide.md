@@ -19,9 +19,10 @@ To ensure continuity between sessions, agents must adhere to the following proce
 2.  **Current Objective**: The single, high-level goal for the current work period is documented in `System/AI-Context/current_objective.md`.
 3.  **Open Questions**: Any blockers or unresolved questions are tracked in `System/AI-Context/open_questions.md`.
 4.  **Task Management**: For any complex task, agents must use the `write_todos` tool to create and update a list of sub-tasks. This plan should be saved periodically to `System/AI-Context/session_tasks.md` whenever the session is summarized.
-5.  **Session Summarization**: Agents must write a summary of the conversation, including decisions and key outputs, to `System/AI-Context/current_session_summary.md` no more than once every 10 minutes, or at the end of a work session.
+5.  **Session Summarization**: Agents must write a summary of the conversation, including decisions and key outputs, to `System/AI-Context/current_session_summary.md` no more than once every 15 minutes, or at the end of a work session.
 6.  **Session Archiving**: Concurrently with session summarization, the agent must append the content of `System/AI-Context/current_session_summary.md` to the main `System/AI-Context/Archived-Conversation-Summaries.md` file to maintain a historical log.
 7.  **Version Control (Commit Interval)**: Agents will perform `git commit` operations (including an "End-of-Day Report" via `git diff` before the final commit of a work session) no more than once every 30 minutes, or when a logical block of work is completed, to create formal save points.
+8. **To-Do List Update** Document the remaining To-Do List by appending it to 04_Agent_Guide.md at the end of every work session.
 
 ## Project Overview
 
@@ -109,7 +110,4 @@ Closes #123
 ```
 
 ## Current To-Do List
-
--   [ ] **Resolve Frontend Rendering Issue**: The `risk-audit` and `journal` pages in the `LifeOS-Web` application are currently throwing an "Internal Server Error" when rendered. This is preventing the Playwright verification script from running and needs to be resolved before the "AI Analysis" feature can be fully verified.
--   [ ] **Create `MASTER_SYSTEM_PROMPT.md`**: The `MASTER_PLAN.md` calls for a `MASTER_SYSTEM_PROMPT.md` to be created by merging `start.md` and `system-blueprint.md`. These files need to be located and the merge needs to be completed.
--   [ ] **Implement AI-Assisted Capture**: The `MASTER_PLAN.md` outlines a feature for "Intelligent Capture" that would allow the user to input natural language and have the AI suggest metadata and file it correctly in the GTD inbox.
+See `System/AI-Context/session_tasks.md`

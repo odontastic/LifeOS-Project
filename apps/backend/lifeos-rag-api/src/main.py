@@ -43,6 +43,9 @@ from .auth import ( # Import auth functions and models
     get_db, create_user, get_user_by_username, verify_password,
     create_access_token, get_current_user, User
 )
+from .schemas import EmotionEntry, EmotionLoggedEvent, EmotionEntry, ContactProfile, TaskItem, KnowledgeNode, SystemInsight # Import Pydantic schemas for entities
+from .crud import create_item, get_item_by_id, get_items, get_db_core_session, EmotionEntryModel # Import CRUD functions and SQLAlchemy models
+from .event_bus import event_bus # Import the global event bus instance
 
 
 # --- Logging Setup ---
@@ -208,6 +211,57 @@ async def health_check():
     status["services"]["neo4j"] = "assumed_up" 
 
     return status
+
+@app.post("/emotion/log", response_model=EmotionEntry)
+async def log_emotion(emotion_entry: EmotionEntry, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' logging emotion: {emotion_entry.primary_emotion}")
+    
+    # Save to SQLite
+    created_emotion = create_item(db, EmotionEntryModel, emotion_entry)
+    
+    # Emit event through EmotionContextBus
+    event_payload = EmotionLoggedEvent(
+        emotion_id=emotion_entry.id,
+        primary_emotion=emotion_entry.primary_emotion,
+        valence=emotion_entry.valence,
+        arousal=emotion_entry.arousal,
+        context_tags=emotion_entry.context_tags
+    )
+    event_bus.emit("emotion_logged", event_payload)
+    
+    return created_emotion
+
+@app.get("/emotion/retrieve/{emotion_id}", response_model=EmotionEntry)
+async def retrieve_emotion(emotion_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' retrieving emotion: {emotion_id}")
+    
+    emotion_item = get_item_by_id(db, EmotionEntryModel, emotion_id)
+    if not emotion_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="EmotionEntry not found")
+    
+    return emotion_item
+
+@app.get("/emotion/analyze", response_model=Dict[str, Any])
+async def analyze_emotion(current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+    logger.info(f"User '{current_user.username}' requesting emotion analysis.")
+    # Placeholder for actual analysis. Later this will integrate with AI Insight Layer.
+    all_emotions = get_items(db, EmotionEntryModel)
+    
+    if not all_emotions:
+        return {"message": "No emotions logged yet for analysis."}
+    
+    # Simple aggregation example
+    emotion_counts = {}
+    for emotion in all_emotions:
+        primary = emotion['primary_emotion']
+        emotion_counts[primary] = emotion_counts.get(primary, 0) + 1
+        
+    return {
+        "message": "Emotion analysis placeholder.",
+        "total_emotions_logged": len(all_emotions),
+        "primary_emotion_counts": emotion_counts,
+        "note": "Full analysis will integrate with AI Insight Layer and provide deeper insights."
+    }
 
 @app.post("/api/ingest")
 async def ingest_data(request: IngestRequest, current_user: User = Depends(get_current_user)):

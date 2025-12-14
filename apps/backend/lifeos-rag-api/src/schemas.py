@@ -67,3 +67,28 @@ class SystemInsight(BaseModel):
     confidence: float
     message: str
     action_recommendations: Optional[List[str]] = None
+
+# --- Event Payloads ---
+class EmotionLoggedEvent(BaseModel):
+    emotion_id: UUID
+    primary_emotion: str
+    valence: int
+    arousal: int
+    context_tags: Optional[List[str]] = None
+
+class CalmCompassActionEvent(BaseModel):
+    quadrant: str
+    entry_id: UUID
+    protocol: str
+
+class InsightCreatedEvent(BaseModel):
+    insight_id: UUID
+    insight_type: str
+    generated_from: List[UUID]
+    message: str
+
+class ContactUpdatedEvent(BaseModel):
+    contact_id: UUID
+    name: str
+    sentiment_summary: Optional[str] = None
+    open_loops: Optional[List[str]] = None
