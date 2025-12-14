@@ -9,6 +9,8 @@ NEO4J_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://qdrant:6333")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "") # Keep empty for no authentication or provide a default
+QDRANT_GRPC_PORT = int(os.getenv("QDRANT_GRPC_PORT", 6334)) # Default gRPC port for Qdrant
 
 # --- Redis Configuration ---
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")

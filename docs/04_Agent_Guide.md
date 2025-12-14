@@ -19,9 +19,9 @@ To ensure continuity between sessions, agents must adhere to the following proce
 2.  **Current Objective**: The single, high-level goal for the current work period is documented in `System/AI-Context/current_objective.md`.
 3.  **Open Questions**: Any blockers or unresolved questions are tracked in `System/AI-Context/open_questions.md`.
 4.  **Task Management**: For any complex task, agents must use the `write_todos` tool to create and update a list of sub-tasks. This plan should be saved periodically to `System/AI-Context/session_tasks.md`.
-5.  **Session Summarization**: Agents must periodically write a summary of the conversation, including decisions and key outputs, to `System/AI-Context/current_session_summary.md`.
-6.  **Session Archiving**: At the end of a session, the agent must append the content of `System/AI-Context/current_session_summary.md` to the main `System/AI-Context/Archived-Conversation-Summaries.md` file to maintain a historical log.
-7.  **Version Control (End-of-Day Report)**: At the end of a session with file changes, the agent will first present an "End-of-Day Report" by running `git diff` to show a clear, human-readable summary of all modifications. After user review and approval, the agent will stage the changes and propose a `git commit` message to create a formal save point.
+5.  **Session Summarization**: Agents must write a summary of the conversation, including decisions and key outputs, to `System/AI-Context/current_session_summary.md` no more than once every 10 minutes, or at the end of a work session.
+6.  **Session Archiving**: Concurrently with session summarization, the agent must append the content of `System/AI-Context/current_session_summary.md` to the main `System/AI-Context/Archived-Conversation-Summaries.md` file to maintain a historical log.
+7.  **Version Control (Commit Interval)**: Agents will perform `git commit` operations (including an "End-of-Day Report" via `git diff` before the final commit of a work session) no more than once every 10 minutes, or when a logical block of work is completed, to create formal save points.
 
 ## Project Overview
 

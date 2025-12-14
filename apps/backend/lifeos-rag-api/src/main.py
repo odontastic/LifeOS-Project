@@ -17,20 +17,16 @@ from sqlalchemy.orm import Session # Import Session for database dependency
 from llama_index.core import Document, VectorStoreIndex
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
+from qdrant_client.http.models import Distance, VectorParams # Needed for Qdrant setup if collections are managed
 
 from fastapi_limiter import FastAPILimiter # Import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter # Import RateLimiter
 
 from .config import (
-
     NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD,
-
-    QDRANT_URL, ARANGODB_HOST, ARANGODB_DB, ARANGODB_USER, ARANGODB_PASSWORD,
-
+    QDRANT_URL, ARANGODB_HOST, ARANGODB_DB, ARANGODB_USER, ARANGODB_PASSWORD, QDRANT_API_KEY, QDRANT_GRPC_PORT,
     REDIS_HOST, REDIS_PORT, REDIS_DB,
-
     ALLOWED_ORIGINS, LOG_LEVEL, ACCESS_TOKEN_EXPIRE_MINUTES
-
 )
 
 from .graph_db import init_lifeos_graph, insert_vertex, insert_edge # Import ArangoDB specific functions
@@ -197,7 +193,7 @@ async def health_check():
 
     # 2. Qdrant
     try:
-        q_client = QdrantClient(url=QDRANT_URL, timeout=2)
+        q_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY, timeout=2)
         q_client.get_collections()
         status["services"]["qdrant"] = "up"
     except Exception as e:
@@ -324,7 +320,7 @@ async def query(request: QueryRequest, current_user: User = Depends(get_current_
         
         graph_query_engine = PlaceholderGraphQueryEngine()
 
-        qdrant_client = QdrantClient(url=QDRANT_URL)
+        qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
         resource_store = QdrantVectorStore(client=qdrant_client, collection_name="lifeos_resources")
         resource_index = VectorStoreIndex.from_vector_store(resource_store)
         resource_query_engine = resource_index.as_query_engine()
