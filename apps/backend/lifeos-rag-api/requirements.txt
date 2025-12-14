@@ -1,2 +1,14 @@
 
+fastapi
+uvicorn
+python-multipart
 python-arango
+redis
+sqlalchemy
+llama-index
+llama-index-vector-stores-qdrant
+fastapi-limiter
+dateparser
+neo4j
+passlib
+python-jose

@@ -39,10 +39,12 @@ from .temporal import parse_time_references
 from .router import get_router_query_engine
 from .synthesizer import FrameworkSynthesizer
 from .reconciliation import DataReconciler # Import DataReconciler
+from .models import User
 from .auth import ( # Import auth functions and models
-    get_db, create_user, get_user_by_username, verify_password,
-    create_access_token, get_current_user, User
+    create_user, get_user_by_username, verify_password,
+    create_access_token, get_current_user
 )
+from .database import get_db
 from .schemas import EmotionEntry, EmotionLoggedEvent, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, RelationLogRequest # Import Pydantic schemas for entities
 from .crud import create_item, get_item_by_id, get_items, update_item, delete_item, get_db_core_session, EmotionEntryModel, SystemInsightModel, ContactProfileModel, TaskItemModel, KnowledgeNodeModel # Import CRUD functions and SQLAlchemy models
 from .event_bus import event_bus # Import the global event bus instance
@@ -99,14 +101,18 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+from . import models
+from .database import engine
+
 # --- FastAPI App ---
 app = FastAPI(title="LifeOS RAG API", version="2.0.0")
 
 _arangodb_graph = None # Global variable to hold the ArangoDB graph instance
 
-@app.on_startup
+@app.on_event("startup")
 async def startup_event():
     global _arangodb_graph # Declare intention to modify the global variable
+    models.Base.metadata.create_all(bind=engine)
     if redis_client:
         await FastAPILimiter.init(redis=redis_client)
     else:
@@ -214,8 +220,11 @@ async def health_check():
     return status
 
 @app.post("/emotion/log", response_model=EmotionEntry)
-async def log_emotion(emotion_entry: EmotionEntry, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
-    logger.info(f"User '{current_user.username}' logging emotion: {emotion_entry.primary_emotion}")
+async def log_emotion(emotion_entry: EmotionEntry, db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' logging emotion: {emotion_entry.primary_emotion}")
     
     # Save to SQLite
     created_emotion = create_item(db, EmotionEntryModel, emotion_entry)
@@ -236,8 +245,11 @@ async def log_emotion(emotion_entry: EmotionEntry, current_user: User = Depends(
     return created_emotion
 
 @app.get("/calm/recommend", response_model=Dict[str, Any])
-async def get_calm_recommendation(current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
-    logger.info(f"User '{current_user.username}' requesting Calm Compass recommendation.")
+async def get_calm_recommendation(db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' requesting Calm Compass recommendation.")
     
     # Retrieve the latest SystemInsight of type 'feedback'
     # In a real scenario, this would be more complex, potentially filtering by user and context.
@@ -256,8 +268,11 @@ async def get_calm_recommendation(current_user: User = Depends(get_current_user)
         }
 
 @app.get("/emotion/retrieve/{emotion_id}", response_model=EmotionEntry)
-async def retrieve_emotion(emotion_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
-    logger.info(f"User '{current_user.username}' retrieving emotion: {emotion_id}")
+async def retrieve_emotion(emotion_id: UUID, db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' retrieving emotion: {emotion_id}")
     
     emotion_item = get_item_by_id(db, EmotionEntryModel, emotion_id)
     if not emotion_item:
@@ -269,10 +284,13 @@ async def retrieve_emotion(emotion_id: UUID, current_user: User = Depends(get_cu
 @app.post("/calm/feedback")
 async def submit_calm_feedback(
     feedback: CalmFeedbackRequest, 
-    current_user: User = Depends(get_current_user), 
-    db: Session = Depends(get_db_core_session)
+    db: Session = Depends(get_db),
+    username: str = Depends(get_current_user)
 ):
-    logger.info(f"User '{current_user.username}' submitting feedback for insight: {feedback.insight_id}")
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' submitting feedback for insight: {feedback.insight_id}")
     
     # Retrieve the SystemInsight
     insight_to_update = get_item_by_id(db, SystemInsightModel, feedback.insight_id)
@@ -308,10 +326,13 @@ async def submit_calm_feedback(
 @app.post("/relation/log")
 async def log_relation(
     relation_log: RelationLogRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db_core_session)
+    db: Session = Depends(get_db),
+    username: str = Depends(get_current_user)
 ):
-    logger.info(f"User '{current_user.username}' logging relation interaction for contact: {relation_log.contact_id}")
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' logging relation interaction for contact: {relation_log.contact_id}")
     
     contact_to_update = get_item_by_id(db, ContactProfileModel, relation_log.contact_id)
     if not contact_to_update:
@@ -344,8 +365,11 @@ async def log_relation(
     return {"message": f"Relation interaction logged successfully for contact {relation_log.contact_id}."}
 
 @app.post("/task/sync", response_model=TaskItem)
-async def sync_task(task_item: TaskItem, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
-    logger.info(f"User '{current_user.username}' syncing task: {task_item.title}")
+async def sync_task(task_item: TaskItem, db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' syncing task: {task_item.title}")
     
     existing_task = get_item_by_id(db, TaskItemModel, task_item.id)
     
@@ -369,8 +393,11 @@ async def sync_task(task_item: TaskItem, current_user: User = Depends(get_curren
     return synced_task
 
 @app.post("/para/update", response_model=KnowledgeNode)
-async def update_para_node(knowledge_node: KnowledgeNode, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
-    logger.info(f"User '{current_user.username}' updating PARA node: {knowledge_node.title}")
+async def update_para_node(knowledge_node: KnowledgeNode, db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' updating PARA node: {knowledge_node.title}")
     
     existing_node = get_item_by_id(db, KnowledgeNodeModel, knowledge_node.id)
     
@@ -386,8 +413,11 @@ async def update_para_node(knowledge_node: KnowledgeNode, current_user: User = D
     return synced_node
 
 @app.get("/relation/prompts", response_model=List[str])
-async def get_relation_prompts(current_user: User = Depends(get_current_user)):
-    logger.info(f"User '{current_user.username}' requesting relation prompts.")
+async def get_relation_prompts(db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' requesting relation prompts.")
     # Placeholder for AI-generated prompts.
     # In future, this will integrate with AI Insight Layer and Connection Engine logic.
     return [
@@ -398,7 +428,11 @@ async def get_relation_prompts(current_user: User = Depends(get_current_user)):
     ]
 
 @app.get("/emotion/analyze", response_model=Dict[str, Any])
-async def analyze_emotion(current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
+async def analyze_emotion(db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' requesting emotion analysis.")
     logger.info(f"User '{current_user.username}' requesting emotion analysis.")
     # Placeholder for actual analysis. Later this will integrate with AI Insight Layer.
     all_emotions = get_items(db, EmotionEntryModel)
@@ -419,9 +453,11 @@ async def analyze_emotion(current_user: User = Depends(get_current_user), db: Se
         "note": "Full analysis will integrate with AI Insight Layer and provide deeper insights."
     }
 
-@app.post("/contact/create", response_model=ContactProfile)
-async def create_contact(contact_profile: ContactProfile, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
-    logger.info(f"User '{current_user.username}' creating contact: {contact_profile.name}")
+async def create_contact(contact_profile: ContactProfile, db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' creating contact: {contact_profile.name}")
     
     # Save to SQLite
     created_contact = create_item(db, ContactProfileModel, contact_profile)
@@ -437,9 +473,11 @@ async def create_contact(contact_profile: ContactProfile, current_user: User = D
     
     return created_contact
 
-@app.get("/contact/retrieve/{contact_id}", response_model=ContactProfile)
-async def retrieve_contact(contact_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
-    logger.info(f"User '{current_user.username}' retrieving contact: {contact_id}")
+async def retrieve_contact(contact_id: UUID, db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' retrieving contact: {contact_id}")
     
     contact_item = get_item_by_id(db, ContactProfileModel, contact_id)
     if not contact_item:
@@ -449,13 +487,15 @@ async def retrieve_contact(contact_id: UUID, current_user: User = Depends(get_cu
 
 @app.put("/contact/update/{contact_id}", response_model=ContactProfile)
 async def update_contact(
-    contact_id: UUID, 
-    contact_profile: ContactProfile, 
-    current_user: User = Depends(get_current_user), 
-    db: Session = Depends(get_db_core_session)
+    contact_id: UUID,
+    contact_profile: ContactProfile,
+    db: Session = Depends(get_db),
+    username: str = Depends(get_current_user)
 ):
-    logger.info(f"User '{current_user.username}' updating contact: {contact_id}")
-    
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' updating contact: {contact_id}")    
     updated_contact = update_item(db, ContactProfileModel, contact_id, contact_profile)
     if not updated_contact:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ContactProfile not found")
@@ -472,8 +512,11 @@ async def update_contact(
     return updated_contact
 
 @app.delete("/contact/delete/{contact_id}")
-async def delete_contact(contact_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db_core_session)):
-    logger.info(f"User '{current_user.username}' deleting contact: {contact_id}")
+async def delete_contact(contact_id: UUID, db: Session = Depends(get_db), username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    logger.info(f"User '{user.username}' deleting contact: {contact_id}")
     
     if not delete_item(db, ContactProfileModel, contact_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ContactProfile not found")
@@ -490,8 +533,10 @@ async def delete_contact(contact_id: UUID, current_user: User = Depends(get_curr
     
     return {"message": "ContactProfile deleted successfully."}
 
-@app.post("/api/ingest")
-async def ingest_data(request: IngestRequest, current_user: User = Depends(get_current_user)):
+async def ingest_data(request: IngestRequest, db: Session = Depends(get_db), current_user_username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=current_user_username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     start_time = time.time() # Start timer
     logger.info("Received ingest request")
     CONFIDENCE_THRESHOLD = 0.65
@@ -559,7 +604,10 @@ async def ingest_data(request: IngestRequest, current_user: User = Depends(get_c
         return {"error": str(e)}
 
 @app.post("/api/query")
-async def query(request: QueryRequest, current_user: User = Depends(get_current_user)):
+async def query(request: QueryRequest, db: Session = Depends(get_db), current_user_username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=current_user_username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     start_time = time.time() # Start timer
     logger.info(f"Received query: {request.query[:50]}...")
     try:
@@ -631,7 +679,10 @@ async def query(request: QueryRequest, current_user: User = Depends(get_current_
         return {"error": str(e)}
 
 @app.post("/api/flows/start")
-async def start_flow(request: StartFlowRequest, current_user: User = Depends(get_current_user)):
+async def start_flow(request: StartFlowRequest, db: Session = Depends(get_db), current_user_username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=current_user_username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if not redis_client:
         raise HTTPException(status_code=503, detail="Redis unavailable for flow state")
     
@@ -653,7 +704,10 @@ async def start_flow(request: StartFlowRequest, current_user: User = Depends(get
     }
 
 @app.post("/api/flows/advance")
-async def advance_flow(request: AdvanceFlowRequest, current_user: User = Depends(get_current_user)):
+async def advance_flow(request: AdvanceFlowRequest, db: Session = Depends(get_db), current_user_username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=current_user_username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if not redis_client:
         raise HTTPException(status_code=503, detail="Redis unavailable")
 
@@ -687,7 +741,10 @@ async def advance_flow(request: AdvanceFlowRequest, current_user: User = Depends
     }
 
 @app.post("/api/feedback")
-async def log_feedback(request: FeedbackRequest, current_user: User = Depends(get_current_user)):
+async def log_feedback(request: FeedbackRequest, db: Session = Depends(get_db), current_user_username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=current_user_username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     # Log to disk for now (could also go to Redis or DB)
     try:
         with open("feedback.csv", "a") as f:
@@ -703,8 +760,10 @@ async def log_feedback(request: FeedbackRequest, current_user: User = Depends(ge
 async def root():
     return {"message": "LifeOS RAG API is running (Optimized)."}
 
-@app.get("/api/metrics")
-async def get_metrics(current_user: User = Depends(get_current_user)):
+async def get_metrics(db: Session = Depends(get_db), current_user_username: str = Depends(get_current_user)):
+    user = get_user_by_username(db, username=current_user_username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     """
     Returns basic metrics for monitoring, including Neo4j node count and Qdrant point counts.
     """

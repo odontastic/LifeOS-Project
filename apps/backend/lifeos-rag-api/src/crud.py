@@ -171,150 +171,84 @@ class SystemInsightModel(Base):
     insight_type = Column(String, nullable=False)  # 'pattern','recommendation','summary'
     generated_from = Column(Text, nullable=False) # Source object UUIDs, stored as JSON string
     model_version = Column(String, nullable=False)
-        confidence = Column(Integer, nullable=False) # Assuming 0-100 for storage as integer
-        message = Column(Text, nullable=False)
-        action_recommendations = Column(Text) # Stored as JSON string
-        feedback_rating = Column(Integer) # User feedback rating (e.g., 1-5)
-        feedback_comment = Column(Text) # User feedback comment
+    confidence = Column(Integer, nullable=False) # Assuming 0-100 for storage as integer
+    message = Column(Text, nullable=False)
+    action_recommendations = Column(Text) # Stored as JSON string
+    feedback_rating = Column(Integer) # User feedback rating (e.g., 1-5)
+    feedback_comment = Column(Text) # User feedback comment
     
-        def to_dict(self):
-            return {
-                "id": str(self.id),
-                "insight_type": self.insight_type,
-                "generated_from": json.loads(self.generated_from) if self.generated_from else None,
-                "model_version": self.model_version,
-                "confidence": self.confidence,
-                "message": self.message,
-                "action_recommendations": json.loads(self.action_recommendations) if self.action_recommendations else None,
-                "feedback_rating": self.feedback_rating,
-                "feedback_comment": self.feedback_comment,
-            }
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "insight_type": self.insight_type,
+            "generated_from": json.loads(self.generated_from) if self.generated_from else None,
+            "model_version": self.model_version,
+            "confidence": self.confidence,
+            "message": self.message,
+            "action_recommendations": json.loads(self.action_recommendations) if self.action_recommendations else None,
+            "feedback_rating": self.feedback_rating,
+            "feedback_comment": self.feedback_comment,
+        }
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
+
+# --- Generic CRUD Operations ---
+
+def create_item(db_session, model, schema_item):
+    # Convert lists/UUIDs in schema_item to JSON strings for storage
+    item_data = schema_item.model_dump()
+    for key, value in item_data.items():
+        if isinstance(value, (list, uuid.UUID)):
+            item_data[key] = json.dumps([str(x) for x in value]) if isinstance(value, list) else str(value)
+        elif isinstance(value, datetime):
+            item_data[key] = value.isoformat() # Store datetime as ISO string or let SQLAlchemy handle
     
+    db_item = model(**item_data)
+    db_session.add(db_item)
+    db_session.commit()
+    db_session.refresh(db_item)
+    return db_item.to_dict() # Return as dict
 
-    
+def get_item_by_id(db_session, model, item_id: uuid.UUID):
+    item = db_session.query(model).filter(model.id == item_id).first()
+    if item:
+        return item.to_dict()
+    return None
 
-    # Create database tables
+def get_items(db_session, model, skip: int = 0, limit: int = 100):
+    return [item.to_dict() for item in db_session.query(model).offset(skip).limit(limit).all()]
 
-    Base.metadata.create_all(bind=engine)
-
-    
-
-    # --- Generic CRUD Operations ---
-
-    
-
-    def create_item(db_session, model, schema_item):
-
-        # Convert lists/UUIDs in schema_item to JSON strings for storage
-
-        item_data = schema_item.model_dump()
-
-        for key, value in item_data.items():
-
-            if isinstance(value, (list, uuid.UUID)):
-
-                item_data[key] = json.dumps([str(x) for x in value]) if isinstance(value, list) else str(value)
-
-            elif isinstance(value, datetime):
-
-                item_data[key] = value.isoformat() # Store datetime as ISO string or let SQLAlchemy handle
-
-        
-
-        db_item = model(**item_data)
-
-        db_session.add(db_item)
-
-        db_session.commit()
-
-        db_session.refresh(db_item)
-
-        return db_item.to_dict() # Return as dict
-
-    
-
-    def get_item_by_id(db_session, model, item_id: uuid.UUID):
-
-        item = db_session.query(model).filter(model.id == item_id).first()
-
-        if item:
-
-            return item.to_dict()
-
+def update_item(db_session, model, item_id: uuid.UUID, schema_item):
+    db_item = db_session.query(model).filter(model.id == item_id).first()
+    if not db_item:
         return None
-
     
-
-    def get_items(db_session, model, skip: int = 0, limit: int = 100):
-
-        return [item.to_dict() for item in db_session.query(model).offset(skip).limit(limit).all()]
-
+    update_data = schema_item.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        if isinstance(value, (list, uuid.UUID)):
+            setattr(db_item, key, json.dumps([str(x) for x in value]) if isinstance(value, list) else str(value))
+        elif isinstance(value, datetime):
+            setattr(db_item, key, value.isoformat())
+        else:
+            setattr(db_item, key, value)
     
+    db_session.commit()
+    db_session.refresh(db_item)
+    return db_item.to_dict()
 
-    def update_item(db_session, model, item_id: uuid.UUID, schema_item):
-
-        db_item = db_session.query(model).filter(model.id == item_id).first()
-
-        if not db_item:
-
-            return None
-
-        
-
-        update_data = schema_item.model_dump(exclude_unset=True)
-
-        for key, value in update_data.items():
-
-            if isinstance(value, (list, uuid.UUID)):
-
-                setattr(db_item, key, json.dumps([str(x) for x in value]) if isinstance(value, list) else str(value))
-
-            elif isinstance(value, datetime):
-
-                setattr(db_item, key, value.isoformat())
-
-            else:
-
-                setattr(db_item, key, value)
-
-        
-
+def delete_item(db_session, model, item_id: uuid.UUID):
+    db_item = db_session.query(model).filter(model.id == item_id).first()
+    if db_item:
+        db_session.delete(db_item)
         db_session.commit()
+        return True
+    return False
 
-        db_session.refresh(db_item)
-
-        return db_item.to_dict()
-
-    
-
-    def delete_item(db_session, model, item_id: uuid.UUID):
-
-        db_item = db_session.query(model).filter(model.id == item_id).first()
-
-        if db_item:
-
-            db_session.delete(db_item)
-
-            db_session.commit()
-
-            return True
-
-        return False
-
-    
-
-    # --- Dependency to get DB session ---
-
-    def get_db_core_session():
-
-        db = SessionLocal()
-
-        try:
-
-            yield db
-
-        finally:
-
-            db.close()
-
-    
+# --- Dependency to get DB session ---
+def get_db_core_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

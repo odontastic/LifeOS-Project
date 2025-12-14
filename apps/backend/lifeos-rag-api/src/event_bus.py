@@ -2,6 +2,7 @@ import logging
 import json
 from datetime import datetime
 from uuid import UUID
+from typing import Optional
 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
