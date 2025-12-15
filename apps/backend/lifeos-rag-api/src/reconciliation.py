@@ -4,7 +4,7 @@ from typing import Set
 from neo4j import GraphDatabase
 from qdrant_client import QdrantClient
 
-from .config import NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD, QDRANT_URL
+from config import NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD, QDRANT_URL
 
 logger = logging.getLogger(__name__)
 

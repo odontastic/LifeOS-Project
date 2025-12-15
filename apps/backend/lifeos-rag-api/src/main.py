@@ -4,7 +4,8 @@ import json
 import logging
 import time # Import the time module
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
+from uuid import UUID
 
 import redis
 from fastapi import FastAPI, HTTPException, Depends, status
@@ -20,35 +21,42 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams # Needed for Qdrant setup if collections are managed
 
 from fastapi_limiter import FastAPILimiter # Import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter # Import RateLimiter
 
-from .config import (
+from config import (
     NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD,
     QDRANT_URL, ARANGODB_HOST, ARANGODB_DB, ARANGODB_USER, ARANGODB_PASSWORD, QDRANT_API_KEY, QDRANT_GRPC_PORT,
     REDIS_HOST, REDIS_PORT, REDIS_DB,
     ALLOWED_ORIGINS, LOG_LEVEL, ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
-from .graph_db import init_lifeos_graph, insert_vertex, insert_edge # Import ArangoDB specific functions
+from graph_db import init_lifeos_graph, insert_vertex, insert_edge # Import ArangoDB specific functions
 
-from .extractor import get_schema_extractor
+from extractor import get_schema_extractor
 
-# from .deduplication import deduplicate_and_merge # Temporarily commented out for debugging
-from .safety import detect_crisis_language, DEFAULT_DISCLAIMER
-from .temporal import parse_time_references
-from .router import get_router_query_engine
-from .synthesizer import FrameworkSynthesizer
-from .reconciliation import DataReconciler # Import DataReconciler
-from .models import User
-from .auth import ( # Import auth functions and models
+# from deduplication import deduplicate_and_merge # Temporarily commented out for debugging
+from safety import detect_crisis_language, DEFAULT_DISCLAIMER
+from temporal import parse_time_references
+from router import get_router_query_engine
+from synthesizer import FrameworkSynthesizer
+from reconciliation import DataReconciler # Import DataReconciler
+from auth import ( # Import auth functions and models
     create_user, get_user_by_username, verify_password,
     create_access_token, get_current_user
 )
-from .database import get_db
-from .schemas import EmotionEntry, EmotionLoggedEvent, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, RelationLogRequest # Import Pydantic schemas for entities
-from .crud import create_item, get_item_by_id, get_items, update_item, delete_item, get_db_core_session, EmotionEntryModel, SystemInsightModel, ContactProfileModel, TaskItemModel, KnowledgeNodeModel # Import CRUD functions and SQLAlchemy models
-from .event_bus import event_bus # Import the global event bus instance
-from .calm_compass import process_emotion_entry_for_calm_compass, update_calm_compass_model_with_feedback # Import Calm Compass processing
+from database import get_db, Base, engine, User, EmotionEntryModel, SystemInsightModel, ContactProfileModel, TaskItemModel, KnowledgeNodeModel
+from schemas import EmotionEntry, EmotionLoggedEvent, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, RelationLogRequest # Import Pydantic schemas for entities
+from crud import create_item, get_item_by_id, get_items, update_item, delete_item, get_db_core_session
+from calm_compass import process_emotion_entry_for_calm_compass, update_calm_compass_model_with_feedback # Import Calm Compass processing
+
+# Imports for event sourcing
+from event_sourcing.event_store import EventStore # Import the EventStore class
+from event_sourcing.models import Event as EventPydantic # Import the Event Pydantic model and alias it
+from event_sourcing.event_processor import EventProcessor # Import the EventProcessor class
+
+# Initialize the global EventStore instance
+event_store_instance: EventStore = EventStore(engine=engine)
+# Initialize the global EventProcessor instance
+event_processor_instance: EventProcessor = EventProcessor(event_store=event_store_instance, engine=engine)
 
 
 # --- Logging Setup ---
@@ -101,18 +109,23 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-from . import models
-from .database import engine
+# Dependency to get the EventStore instance
+def get_event_store() -> EventStore:
+    return event_store_instance
+
+# Dependency to get the EventProcessor instance
+def get_event_processor() -> EventProcessor:
+    return event_processor_instance
 
 # --- FastAPI App ---
-app = FastAPI(title="LifeOS RAG API", version="2.0.0")
+app = FastAPI(title="LifeOS RAG API", version="20.0.0")
 
 _arangodb_graph = None # Global variable to hold the ArangoDB graph instance
 
 @app.on_event("startup")
 async def startup_event():
     global _arangodb_graph # Declare intention to modify the global variable
-    models.Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
     if redis_client:
         await FastAPILimiter.init(redis=redis_client)
     else:
@@ -122,6 +135,10 @@ async def startup_event():
     _arangodb_graph = init_lifeos_graph()
     if not _arangodb_graph:
         logger.error("Failed to initialize ArangoDB graph. Graph operations will not work.")
+
+    # Replay events to build read models
+    event_processor_instance.replay_events()
+    logger.info("Event processor replayed all events to build read models.")
 
 
 # --- CORS Middleware ---
@@ -134,13 +151,21 @@ app.add_middleware(
 )
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Import and include routers
+from routers import zettel, project, area, resource, task, goal, reflection, journal_entry, emotion, belief, trigger
+
+app.include_router(zettel.router, prefix="/zettel", tags=["Zettel"])
+app.include_router(project.router, prefix="/project", tags=["Project"])
+app.include_router(area.router, prefix="/area", tags=["Area"])
+app.include_router(resource.router, prefix="/resource", tags=["Resource"])
+app.include_router(task.router, prefix="/task", tags=["Task"])
+app.include_router(goal.router, prefix="/goal", tags=["Goal"])
+app.include_router(reflection.router, prefix="/reflection", tags=["Reflection"])
+app.include_router(journal_entry.router, prefix="/journal_entry", tags=["Journal Entry"])
+app.include_router(emotion.router, prefix="/emotion", tags=["Emotion"])
+app.include_router(belief.router, prefix="/belief", tags=["Belief"])
+app.include_router(trigger.router, prefix="/trigger", tags=["Trigger"])
+
 
 # --- Authentication Routes ---
 @app.post("/register", response_model=Token)
@@ -163,7 +188,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/token", response_model=Token)
-@RateLimiter(times=5, seconds=60) # 5 login attempts per minute
+# @RateLimiter(times=5, seconds=60) # 5 login attempts per minute
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = get_user_by_username(db, username=form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):

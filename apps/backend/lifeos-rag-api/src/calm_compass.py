@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 from sqlalchemy.orm import Session
-from .schemas import EmotionEntry, SystemInsight
+from schemas import EmotionEntry, SystemInsight
 
 logger = logging.getLogger(__name__)
 

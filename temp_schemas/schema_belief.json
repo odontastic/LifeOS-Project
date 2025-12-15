@@ -1,0 +1,16 @@
+---
+title: "Belief Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "therapeutic", "belief"]
+---
+
+{
+  "id": "string",
+  "type": "belief",
+  "statement": "string",
+  "status": "limiting|empowering",
+  "related_entries": ["string"]
+}

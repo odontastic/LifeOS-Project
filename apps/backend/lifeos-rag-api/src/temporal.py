@@ -5,7 +5,7 @@ import json
 import logging
 
 from llama_index.core.llms import ChatMessage, MessageRole
-from .llm_config import get_llm # Assuming get_llm returns a standard LLM client
+from llm_config import get_llm # Assuming get_llm returns a standard LLM client
 
 logger = logging.getLogger(__name__)
 

@@ -2,18 +2,23 @@ import os
 from sqlalchemy import Column, Integer, String
 from passlib.context import CryptContext
 from jose import jwt, JWTError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone # Import timezone
 from typing import Optional
 
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session # Import Session
 
-from .config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from .database import get_db, engine, Base, SessionLocal
-from .models import User
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from database import User, get_db, engine, Base, SessionLocal
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+credentials_exception = HTTPException( # Define credentials_exception
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
 
 # --- Password Hashing ---
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -44,9 +49,9 @@ def create_user(db: Session, username: str, password: str, email: str = None):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta # Use timezone-aware datetime
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15) # Use timezone-aware datetime
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -65,4 +70,3 @@ def verify_token(token: str) -> str:
 def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
     username = verify_token(token)
     return username
-

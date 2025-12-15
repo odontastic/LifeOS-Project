@@ -2,7 +2,7 @@ from arango import ArangoClient
 from arango.exceptions import DocumentInsertError, ArangoClientError, CollectionPropertiesError
 import logging
 
-from .config import ARANGODB_HOST, ARANGODB_DB, ARANGODB_USER, ARANGODB_PASSWORD
+from config import ARANGODB_HOST, ARANGODB_DB, ARANGODB_USER, ARANGODB_PASSWORD
 
 logger = logging.getLogger(__name__)
 

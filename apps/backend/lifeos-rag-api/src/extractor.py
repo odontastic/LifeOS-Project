@@ -3,7 +3,7 @@ from typing import Literal
 from dotenv import load_dotenv
 from llama_index.core.indices.property_graph import SchemaLLMPathExtractor
 from llama_index.core.prompts import PromptTemplate
-from .llm_config import get_llm
+from llm_config import get_llm
 
 # Load environment variables
 load_dotenv()

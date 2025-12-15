@@ -1,435 +1,298 @@
 Developer Handbook 
-created Chat GPT (Perplexity assist) 2025-12-11
+created: Chat GPT (Perplexity assist) 2025-12-11
+updated: 2025-12-14
 ---
+Here is a merged and updated version of the LifeOS Developer Handbook, blending your original Developer Handbook with the most recent technical, architectural, and agentic coding guidance:
 
-# 🛠️ **Developer Handbook for the PARA + GTD + Zettelkasten System**
+🛠️ LifeOS Developer Handbook (v2.0)
+A unified schema, workflow, and execution guide for building the “LifeOS” personal knowledge, productivity, and emotional intelligence system, integrating PARA, GTD, Zettelkasten, Therapeutic Journaling, and Hybrid RAG AI.
 
-A unified schema, workflow, and execution guide for building the “LifeOS” personal knowledge and productivity system, integrating **PARA**, **GTD**, **Zettelkasten**, and **Therapeutic Journaling**.
+1. 🎯 Purpose
+This document defines all data models, operations, workflows, bridging logic, and expectations for AI agents and human developers to:
 
----
+Parse user input
 
-# 1. 🎯 **Purpose**
+Place it in the correct system layer (PARA/GTD/Zettelkasten/Therapeutic)
 
-This document defines **all data models, operations, workflows, bridging logic, and expectations** required for an AI agent to:
+Create/update the unified graph-based knowledge system
 
-* Parse user input
-* Place it in the correct system layer (PARA/GTD/Zettelkasten/Therapeutic)
-* Create/update the unified graph-based knowledge system
-* Propose tasks, projects, zettels, reflections, and links
-* Maintain long-term order and consistency
+Propose tasks, projects, zettels, reflections, and links
 
-This *is* the “source of truth” for the AI developer.
+Maintain long-term order and consistency
 
----
+Orchestrate AI-driven insights, retrieval, and regulation (RAG, emotion logging, grounding)
 
-# 2. 🧩 **Core Concepts**
+This is the “source of truth” for the AI developer.
 
-### PARA
+2. 🧩 Core Concepts
+PARA
+Projects: Multi-step outcomes with deadlines.
 
-* **Projects:** multi-step outcomes with deadlines
-* **Areas:** ongoing responsibilities
-* **Resources:** reference materials, evergreen
-* **Archives:** inactive items
+Areas: Ongoing responsibilities.
 
-### GTD
+Resources: Reference materials, evergreen.
 
-* **Tasks:** concrete, physical next actions
-* **Contexts:** where/how tasks get done
-* **Horizons:** purpose → vision → goals → areas → projects → tasks
+Archives: Inactive items.
 
-### Zettelkasten
+GTD
+Tasks: Concrete, physical next actions.
 
-* **Zettels:** atomic notes
-* **Links:** semantic relationships (bidirectional)
-* **Reflections:** higher-level insights
+Contexts: Where/how tasks get done.
 
-### Therapeutic Graph (Coaching Module)
+Horizons: Purpose → Vision → Goals → Areas → Projects → Tasks.
 
-* **Journal Objects:** Entities representing emotional states
-* **Nodes:** Emotion, Belief, Trigger, CopingMechanism, Episode
-* **Flows:** Interactive coaching sessions (CBT, various frameworks)
-* **GTD Dashboard:** Visual overview of tasks, contexts, and horizons for GTD workflow
-* **Prism Clarity Studio:** AI‑powered decision‑making and training engine built on the knowledge base and a library of mental models
+Zettelkasten
+Zettels: Atomic notes.
 
----
+Links: Semantic relationships (bidirectional).
 
-# 3. 📦 **Unified Data Models (Implementation-Ready Schemas)**
+Reflections: Higher-level insights.
 
-These should be treated as *JSON-like TypeScript interfaces*.
+Therapeutic Graph (Coaching Module)
+Journal Objects: Entities representing emotional states.
 
----
+Nodes: Emotion, Belief, Trigger, CopingMechanism, Episode.
 
-## 3.1 **Zettel**
+Flows: Interactive coaching sessions (CBT, various frameworks).
 
-```
+GTD Dashboard: Visual overview of tasks, contexts, and horizons.
+
+Prism Clarity Studio: AI-powered decision-making and training engine.
+
+3. 📦 Unified Data Models (Implementation-Ready Schemas)
+These should be treated as JSON-like TypeScript interfaces.
+
+3.1 Zettel
+json
 {
-  id: string,
-  type: "zettel",
-  title: string,
-  body: string,
-  created_at: timestamp,
-  updated_at: timestamp,
-  links: string[],            // zettel IDs or entity IDs
-  tags: string[],
-  horizon: "none" | "vision" | "goals" | "principles",
-  contexts: string[]          // optional, GTD integration
+  "id": "string",
+  "type": "zettel",
+  "title": "string",
+  "body": "string",
+  "created_at": "timestamp",
+  "updated_at": "timestamp",
+  "links": ["string"], // zettel IDs or entity IDs
+  "tags": ["string"],
+  "horizon": "none|vision|goals|principles",
+  "contexts": ["string"] // optional, GTD integration
 }
-```
-
----
-
-## 3.2 **Project**
-
-```
+3.2 Project
+json
 {
-  id: string,
-  type: "project",
-  title: string,
-  desired_outcome: string,
-  why_it_matters: string,
-  success_criteria: string[],
-  next_actions: string[],        // task IDs
-  status: "active" | "paused" | "done",
-  area: string | null,           // area ID
-  related_zettels: string[],
-  horizon: "projects"
+  "id": "string",
+  "type": "project",
+  "title": "string",
+  "desired_outcome": "string",
+  "why_it_matters": "string",
+  "success_criteria": ["string"],
+  "next_actions": ["string"], // task IDs
+  "status": "active|paused|done",
+  "area": "string|null",
+  "related_zettels": ["string"],
+  "horizon": "projects"
 }
-```
-
----
-
-## 3.3 **Area**
-
-```
+3.3 Area
+json
 {
-  id: string,
-  type: "area",
-  title: string,
-  description: string,
-  health_metric: string,        // e.g. “Stable / Needs Attention”
-  active_projects: string[],    // project IDs
-  active_tasks: string[],
-  related_resources: string[],
-  related_zettels: string[],
-  horizon: "areas"
+  "id": "string",
+  "type": "area",
+  "title": "string",
+  "description": "string",
+  "health_metric": "Stable|Needs Attention",
+  "active_projects": ["string"],
+  "active_tasks": ["string"],
+  "related_resources": ["string"],
+  "related_zettels": ["string"],
+  "horizon": "areas"
 }
-```
-
----
-
-## 3.4 **Resource**
-
-```
+3.4 Resource
+json
 {
-  id: string,
-  type: "resource",
-  title: string,
-  format: "link" | "file" | "zettel" | "mixed",
-  body: string,
-  tags: string[],
-  related_zettels: string[],
-  horizon: "resources"
+  "id": "string",
+  "type": "resource",
+  "title": "string",
+  "format": "link|file|zettel|mixed",
+  "body": "string",
+  "tags": ["string"],
+  "related_zettels": ["string"],
+  "horizon": "resources"
 }
-```
-
----
-
-## 3.5 **Task**
-
-```
+3.5 Task
+json
 {
-  id: string,
-  type: "task",
-  title: string,
-  description: string,
-  status: "next" | "waiting" | "scheduled" | "done",
-  due: timestamp | null,
-  context: string,
-  project: string | null,
-  area: string | null,
-  related_zettels: string[],
-  horizon: "actions"
+  "id": "string",
+  "type": "task",
+  "title": "string",
+  "description": "string",
+  "status": "next|waiting|scheduled|done",
+  "due": "timestamp|null",
+  "context": "string",
+  "project": "string|null",
+  "area": "string|null",
+  "related_zettels": ["string"],
+  "horizon": "actions"
 }
-```
-
----
-
-## 3.6 **Goal**
-
-```
+3.6 Goal
+json
 {
-  id: string,
-  type: "goal",
-  title: string,
-  description: string,
-  deadline: timestamp | null,
-  success_criteria: string[],
-  related_projects: string[],
-  related_zettels: string[],
-  horizon: "goals"
+  "id": "string",
+  "type": "goal",
+  "title": "string",
+  "description": "string",
+  "deadline": "timestamp|null",
+  "success_criteria": ["string"],
+  "related_projects": ["string"],
+  "related_zettels": ["string"],
+  "horizon": "goals"
 }
-```
-
----
-
-## 3.7 **Reflection**
-
-```
+3.7 Reflection
+json
 {
-  id: string,
-  type: "reflection",
-  body: string,
-  insights: string[],            // textual insights
-  generated_zettels: string[],   // IDs created during review
-  related_areas: string[],
-  related_projects: string[],
-  created_at: timestamp
+  "id": "string",
+  "type": "reflection",
+  "body": "string",
+  "insights": ["string"],
+  "generated_zettels": ["string"],
+  "related_areas": ["string"],
+  "related_projects": ["string"],
+  "created_at": "timestamp"
 }
-```
-
----
-
-## 3.8 **Therapeutic Nodes (Coaching Module)**
-
-These entities capture the emotional and psychological context of the user.
-
-### **JournalEntry**
-```
+3.8 Therapeutic Nodes (Coaching Module)
+JournalEntry
+json
 {
-  id: string,
-  type: "journal_entry",
-  body: string,
-  mood_rating: number, // 1-10
-  emotions: string[],  // IDs of Emotion nodes
-  beliefs: string[],   // IDs of Belief nodes
-  created_at: timestamp
+  "id": "string",
+  "type": "journal_entry",
+  "body": "string",
+  "mood_rating": "number", // 1–10
+  "emotions": ["string"], // Emotion IDs
+  "beliefs": ["string"], // Belief IDs
+  "created_at": "timestamp"
 }
-```
-
-### **Emotion**
-```
+Emotion
+json
 {
-  id: string,
-  type: "emotion",
-  name: string,        // e.g. "Anxiety", "Joy"
-  intensity: number,
-  valence: "positive" | "negative" | "neutral",
-  related_entries: string[]
+  "id": "string",
+  "type": "emotion",
+  "name": "string",
+  "intensity": "number",
+  "valence": "positive|negative|neutral",
+  "related_entries": ["string"]
 }
-```
-
-### **Belief**
-```
+Belief
+json
 {
-  id: string,
-  type: "belief",
-  statement: string,   // e.g. "I must be perfect"
-  status: "limiting" | "empowering",
-  related_entries: string[]
+  "id": "string",
+  "type": "belief",
+  "statement": "string",
+  "status": "limiting|empowering",
+  "related_entries": ["string"]
 }
-```
-
-### **Trigger**
-```
+Trigger
+json
 {
-  id: string,
-  type: "trigger",
-  description: string,
-  related_emotions: string[]
+  "id": "string",
+  "type": "trigger",
+  "description": "string",
+  "related_emotions": ["string"]
 }
-```
-
----
-
-# 4. 🔗 **Bridging Rules (Critical Execution Logic)**
-
-These rules *must* be executed automatically by the AI agent whenever interpreting user content.
-
----
-
-## 4.1 **Zettel → Project Conversion Rule**
-
+4. 🔗 Bridging Rules (Critical Execution Logic)
+4.1 Zettel → Project Conversion
 When a zettel expresses:
 
-* a **desired outcome**,
-* that requires **multiple steps**,
-* and describes **effort over time**,
+A desired outcome,
 
-THEN the AI must propose a Project:
+That requires multiple steps,
 
-```
-{
-  desired_outcome,
-  why_it_matters,
-  success_criteria: [],
-  next_actions: []
-}
-```
+And describes effort over time,
+THEN propose a Project and link bidirectionally.
 
-And link:
+4.2 Weekly Review Loop
+For each Area:
 
-* zettel → project
-* project → zettel
+Retrieve active projects, tasks, recent reflections.
 
----
+Ask: “Any new changes in this Area?”
 
-## 4.2 **Weekly Review Loop**
+Generate new zettels for insights.
 
-For each **Area**:
+Propose new projects, task clean-ups, resource updates.
 
-1. Retrieve:
+Create a Reflection capturing new insights.
 
-   * active projects
-   * active tasks
-   * recent reflections
+4.3 Therapeutic Bridging (Journal → Insight)
+When a JournalEntry reveals a recurring pattern or significant realization:
 
-2. Ask:
+Extract Beliefs.
 
-   * “Any new changes in this Area?”
-   * “Any new problems, insights, or emerging outcomes?”
+Create a Zettel for key beliefs/insights.
 
-3. Generate new zettels for insights.
+Propose a Task or Resource link for coping mechanisms.
 
-4. Propose:
+5. 🧠 Session Expectations for the AI Agent
+For every user query:
 
-   * new projects
-   * task clean-ups
-   * resource updates
+Identify involved system layers (PARA/GTD/Zettelkasten/Therapeutic/Prism).
 
-5. Create a **Reflection** capturing:
+Suggest data structure or state changes.
 
-   * new insights
-   * created zettels
-   * project status adjustments
+Generate prompts or pseudo-code for coding agents.
 
----
+6. 🔧 Coding Agent Instructions (Junior-Level Ready)
+Core Rules
+Always validate input against the schemas.
 
-## 4.3 **Therapeutic Bridging (Journal → Insight)**
+Auto-detect content type (task, project, area, zettel, goal, reflection, GTD element, Prism request).
 
-When a **JournalEntry** reveals a recurring pattern or significant realization:
+Follow bridging rules without exception.
 
-1. **Extract Beliefs**: Identify core beliefs underlying the entry.
-2. **Create Zettel**: If a belief is identified as a "limiting belief" or "key insight", create a Zettel to formally track it in the Zettelkasten.
-3. **Propose Action**: If a **CopingMechanism** is identified, propose it as a potential **Task** or **Resource** link.
+Keep all links bidirectional.
 
-**Example Logic:**
-> IF `JournalEntry` mentions "I feel overwhelmed by Project X" 
-> AND `Project X` exists 
-> THEN Link `JournalEntry` -> `Project X`
-> AND Suggest `Task`: "Break down Project X into smaller steps"
+Use timestamps automatically.
 
----
+Never delete—only archive.
 
-# 5. 🧠 **Session Expectations for the AI Agent**
+Produce consistent IDs (UUIDv4).
 
-For **every** user query:
+Every Project has at least one Next Action.
 
-### 1️⃣ Identify Layers Involved
+Every Zettel links to at least one other entity.
 
-Label which system layers are relevant:
+Weekly Review workflow must be a callable function.
 
-* PARA
-* GTD
-* Zettelkasten
-* Therapeutic
-* GTD Dashboard
-* Prism Clarity Studio
+7. ⚙️ System Operations API (Pseudo-API for AI Coder)
+Zettel operations
+create_zettel(data)
 
-### 2️⃣ Suggest Data Structure or State Changes
+update_zettel(id, patch)
 
-Specify exactly which entities would be created/updated.
+link_zettels(id1, id2)
 
-### 3️⃣ Generate Prompts or Pseudo-Code
+Project operations
+create_project(data)
 
-Provide output in a format the coding agent can execute, such as:
+add_task_to_project(project_id, task_id)
 
-* JSON patches
-* database operations
-* create/update/delete instructions
-* schema validation warnings
+update_project_status(project_id, status)
 
-This turns ChatGPT into a structured *design + architecture companion*.
+Area operations
+create_area(data)
 
----
+assign_project_to_area(area_id, project_id)
 
-# 6. 🔧 **Coding Agent Instructions (Junior-Level Ready)**
+Task operations
+create_task(data)
 
-Give these directly to your AI developer:
+update_task_status(id, status)
 
----
+Reflection operations
+create_reflection(data)
 
-## “AI Coder Instructions — Core Rules”
+Weekly Review
+run_weekly_review()
 
-1. Always validate input against the schemas.
-
-2. Auto-detect whether user content is a:
-
-   * task
-   * project
-   * area update
-   * zettel
-   * goal
-   * reflection
-   * GTD dashboard element
-   * Prism Clarity Studio request
-
-3. Follow the bridging rules without exception.
-
-4. Keep all links **bidirectional**.
-
-5. Use timestamps automatically.
-
-6. Never delete data — only archive.
-
-7. Produce consistent IDs (UUIDv4).
-
-8. Ensure every Project has at least one Next Action.
-
-9. Every Zettel must link to at least one other entity.
-
-10. Weekly Review workflow must be able to run as a function.
-
----
-
-# 7. ⚙️ **System Operations API (Pseudo-API for the AI Coder)**
-
-Expose these as callable actions:
-
-### Zettel operations
-
-* `create_zettel(data)`
-* `update_zettel(id, patch)`
-* `link_zettels(id1, id2)`
-
-### Project operations
-
-* `create_project(data)`
-* `add_task_to_project(project_id, task_id)`
-* `update_project_status(project_id, status)`
-
-### Area operations
-
-* `create_area(data)`
-* `assign_project_to_area(area_id, project_id)`
-
-### Task operations
-
-* `create_task(data)`
-* `update_task_status(id, status)`
-
-### Reflection operations
-
-* `create_reflection(data)`
-
-### Weekly Review
-
-* `run_weekly_review()`
-
----
-
-# 8. 📋 Checklist for the AI Coder (Copy-Paste Ready)
-
-```
+8. 📋 Checklist for the AI Coder
+text
 [ ] Validate all inputs using schema
 [ ] Detect type: zettel/project/task/etc.
 [ ] Apply bridging rules
@@ -439,45 +302,29 @@ Expose these as callable actions:
 [ ] Archive only, never delete
 [ ] Generate pseudo-code for all operations
 [ ] Return both: state changes + reasoning
-```
-
----
-
-# 9. 📚 “Done-For-You” Prompts the Coder Can Run
-
-## Create a new entity:
-
-```
+9. 📚 “Done-For-You” Prompts
+Create a new entity
+text
 CreateEntity({
   type: "zettel",
   title: "...",
   body: "..."
 })
-```
-
-## Generate weekly review actions:
-
-```
+Generate weekly review actions
+text
 RunWeeklyReview({ area_id: "..." })
-```
-
-## Convert zettel → project:
-
-```
+Convert zettel → project
+text
 ConvertZettelToProject({ zettel_id: "..." })
-```
+10. 🧭 Final Note — How the AI Should Work
+Think of the system as:
 
----
+A graph (entities + links)
 
-# 10. 🧭 Final Note — How the AI Should Work
+A workflow engine (bridging rules + weekly reviews)
 
-The coder should think of the entire system as:
+A parser (interprets user text)
 
-* **A graph** (entities + links)
-* **A workflow engine** (bridging rules + weekly reviews)
-* **A parser** (interprets user text)
-* **A consistent database** (never messy)
+A consistent database (never messy)
 
-The goal is clarity, consistency, and long-term maintainability.
-
----
+Goal: Clarity, consistency, and long-term maintainability.

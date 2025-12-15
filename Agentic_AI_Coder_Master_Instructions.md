@@ -1,4 +1,79 @@
+---
+title: "LifeOS — Agentic AI Coder Master Instructions"
+created: 2025-01-XX
+last_modified: 2025-01-XX
+created_by: "ChatGPT (AI Assistant)"
+description: >
+  Project-level build contract and engineering constraints for LifeOS.
+  Defines what may be built, how it must be built, and when work is considered complete.
+document_role: >
+  This document governs implementation behavior for the LifeOS project.
+  It operates under the Global System Prompt and LifeOS Architect / Supervisor directives.
+related_docs:
+  - Global System Prompt (applies everywhere, all agents)
+  - LifeOS Architect Prompt (architecture, planning, recovery, supervision)
+  - Definition of Done & Recovery Protocol (global heuristics)
+---
+
+# Purpose and Position in the System
+#
+# This document is a project-level implementation contract for LifeOS.
+#
+#It defines hard constraints, non-goals, stack decisions, safety rules, and completion criteria that all coding agents must follow when implementing LifeOS features.
+#
+#How This Document Fits With the Other Prompts (Read This When Confused)
+#
+#This project uses layered authority to prevent chaos:
+#
+#Global System Prompt
+#  Governs how the AI thinks everywhere.
+#  Includes decision discipline, recovery behavior, escalation rules, and when to stop.
+
+# LifeOS Architect / Supervisor Prompt
+#  Governs architectural decisions, planning, auditing, recovery, and coordination.
+#  Acts as the foreman on the construction site.
+#
+# This Document (Agentic AI Coder Master Instructions)
+#  Governs implementation behavior once direction is given.
+#  Defines what is allowed, forbidden, required, and out of scope.
+#
+# If a conflict arises:
+#
+# Global System Prompt wins
+# Then LifeOS Architect / Supervisor
+# Then this document
+#
+# This document does not authorize architectural discovery, speculative refactors, or recovery strategies.
+# Those responsibilities belong to the Architect / Supervisor layer.
+#
+# Authoritative Scope
+# 
+# Within the LifeOS project, this document is authoritative for:
+# Technology and stack choices
+# Licensing constraints
+# Architectural invariants
+# Explicit non-goals
+# Data ownership rules
+# Definition of Done (project-level)
+# 
+# Ambiguity, failure, uncertainty, or blocked progress must be handled using the * Global Recovery and Escalation Protocol *, not improvised locally.
+#
+# Intent
+# The intent of this document is to ensure that:
+#   LifeOS remains simple, understandable, and reversible
+#   Progress is coherent and auditable
+#   The system can be reviewed, paused, resumed, or handed off without archaeology
+#   Implementation does not drift away from the original vision
+#
+# If following an instruction here would violate higher-level guidance, pause and escalate.
+
 # LifeOS — Agentic AI Coder Master Instructions
+
+# AGENTS.md → behavioral and safety constraints
+# LifeOS Agentic AI Coder Master Instructions → architecture, scope, non-goals
+# GEMINI.md → repo-specific, operational execution rules
+# That’s a clean three-layer control system.
+
 
 ## Purpose
 

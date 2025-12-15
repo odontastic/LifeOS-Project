@@ -1,101 +1,21 @@
+---
+title: "Area Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "area"]
+---
+
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Area",
-  "description": "Long-term responsibility category.",
-  "type": "object",
-  "required": [
-    "id",
-    "type",
-    "title",
-    "body",
-    "horizon",
-    "status",
-    "created_at",
-    "updated_at"
-  ],
-  "properties": {
-    "id": {
-      "type": "string",
-      "pattern": "^A-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-      "description": "Unique identifier for the area (UUID prefixed with A-)"
-    },
-    "type": {
-      "type": "string",
-      "enum": ["area"],
-      "description": "Type of the entity"
-    },
-    "title": {
-      "type": "string",
-      "description": "Title of the area"
-    },
-    "body": {
-      "type": "string",
-      "description": "Description and scope of the area"
-    },
-    "horizon": {
-      "type": "string",
-      "enum": ["H2"],
-      "description": "Horizon level of the area (H2 = Areas)"
-    },
-    "status": {
-      "type": "string",
-      "enum": ["active", "archived", "on_hold"],
-      "description": "Current status of the area"
-    },
-    "projects": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "pattern": "^P-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-      },
-      "description": "IDs of associated projects within this area"
-    },
-    "related_zettels": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "pattern": "^Z-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-      },
-      "description": "IDs of related zettels relevant to this area"
-    },
-    "metrics": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Key metrics or indicators tracked for this area"
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp of creation (ISO 8601)"
-    },
-    "updated_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp of last update (ISO 8601)"
-    }
-  },
-  "indexes": [
-    "id",
-    "created_at",
-    "updated_at",
-    "type",
-    "title",
-    "horizon",
-    "status"
-  ],
-  "example": {
-    "id": "A-f1e2d3c4-b5a6-7c8d-9e0f-1234567890ab",
-    "type": "area",
-    "title": "Health & Fitness",
-    "body": "Maintaining physical and mental well-being; regular exercise, balanced nutrition, mindfulness practices.",
-    "horizon": "H2",
-    "status": "active",
-    "projects": ["P-a1b2c3d4-e5f6-7a8b-9c0d-1234567890ab"],
-    "related_zettels": ["Z-c1d2e3f4-a5b6-7c8d-9e0f-1234567890ab"],
-    "metrics": ["VO2 Max", "Sleep Score", "Mindfulness Minutes"],
-    "created_at": "2025-01-01T08:00:00Z",
-    "updated_at": "2025-01-15T10:00:00Z"
-  }
+  "id": "string",
+  "type": "area",
+  "title": "string",
+  "description": "string",
+  "health_metric": "Stable|Needs Attention",
+  "active_projects": ["string"],
+  "active_tasks": ["string"],
+  "related_resources": ["string"],
+  "related_zettels": ["string"],
+  "horizon": "areas"
 }

@@ -1,119 +1,22 @@
+---
+title: "Task Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "task"]
+---
+
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Task",
-  "description": "Executable atom of action.",
-  "type": "object",
-  "required": [
-    "id",
-    "type",
-    "description",
-    "status",
-    "context",
-    "energy",
-    "time_estimate",
-    "created_at",
-    "updated_at"
-  ],
-  "properties": {
-    "id": {
-      "type": "string",
-      "pattern": "^T-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-      "description": "Unique identifier for the task (UUID prefixed with T-)"
-    },
-    "type": {
-      "type": "string",
-      "enum": ["task"],
-      "description": "Type of the entity"
-    },
-    "description": {
-      "type": "string",
-      "description": "Detailed description of the action to be performed"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "inbox",
-        "next-action",
-        "waiting-for",
-        "someday-maybe",
-        "to-read",
-        "to-think-about",
-        "needs-processing",
-        "done"
-      ],
-      "description": "Current status of the task, matching GTD folder categories"
-    },
-    "context": {
-      "type": "string",
-      "enum": [
-        "@Computer",
-        "@Home",
-        "@Calls",
-        "@Errands",
-        "@Shopping",
-        "@Cleaning",
-        "@Organization",
-        ""
-      ],
-      "description": "Context tag for where/how the task can be done"
-    },
-    "energy": {
-      "type": "string",
-      "enum": ["low", "medium", "high"],
-      "description": "Estimated energy required to complete the task"
-    },
-    "time_estimate": {
-      "type": "string",
-      "enum": ["5m", "15m", "30m", "1h+", "2h+"],
-      "description": "Estimated time required to complete the task"
-    },
-    "project": {
-      "type": ["string", "null"],
-      "pattern": "^P-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-      "description": "ID of the associated project"
-    },
-    "area": {
-      "type": ["string", "null"],
-      "pattern": "^A-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-      "description": "ID of the associated area"
-    },
-    "generated_from": {
-      "type": ["string", "null"],
-      "description": "ID of the entity that generated this task (e.g., Project, Goal, Reflection)"
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp of creation (ISO 8601)"
-    },
-    "updated_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp of last update (ISO 8601)"
-    }
-  },
-  "indexes": [
-    "id",
-    "created_at",
-    "updated_at",
-    "type",
-    "status",
-    "context",
-    "project",
-    "area"
-  ],
-  "example": {
-    "id": "T-f1e2d3c4-b5a6-7c8d-9e0f-1234567890ab",
-    "type": "task",
-    "description": "Call dental office to schedule 6-month cleaning.",
-    "status": "next-action",
-    "context": "@Calls",
-    "energy": "low",
-    "time_estimate": "5m",
-    "project": null,
-    "area": "A-f1e2d3c4-b5a6-7c8d-9e0f-1234567890ab",
-    "generated_from": null,
-    "created_at": "2025-01-15T09:30:00Z",
-    "updated_at": "2025-01-15T09:30:00Z"
-  }
+  "id": "string",
+  "type": "task",
+  "title": "string",
+  "description": "string",
+  "status": "next|waiting|scheduled|done",
+  "due": "timestamp|null",
+  "context": "string",
+  "project": "string|null",
+  "area": "string|null",
+  "related_zettels": ["string"],
+  "horizon": "actions"
 }

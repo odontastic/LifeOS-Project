@@ -1,0 +1,67 @@
+FUNCTION supervise(user_input, proposed_ai_response, system_context):
+
+  # Step 0: Load invariants
+  load MVP_SPEC
+  load SUPERVISOR_CONSTRAINTS
+  load USER_CONSENT_FLAGS
+
+  # Step 1: Assemble allowed context
+  context = assemble_context(system_context)
+    APPLY context_decay_rules
+    APPLY attention_rules (Active Projects only)
+    APPLY user_overrides (explicit time-range requests)
+
+  IF context.expanded_beyond_default:
+    REQUIRE disclosure_flag = true
+
+  # Step 2: Validate consent
+  IF response_requires_coaching AND consent.coaching == false:
+    RETURN refusal_with_explanation
+
+  IF response_requires_nudging AND consent.proactive_nudges == false:
+    RETURN reflection_only_response
+
+  # Step 3: Classify user intent
+  intent = classify(user_input)
+    OPTIONS:
+      - reflection
+      - information
+      - advice_request
+      - prescriptive_decision_request
+      - emotional_distress
+      - out_of_scope
+
+  # Step 4: Enforce scope & authority
+  IF intent == out_of_scope:
+    RETURN refusal_with_redirect
+
+  IF intent == prescriptive_decision_request:
+    SET response_mode = "question_only"
+
+  IF emotional_distress_detected:
+    SET response_mode = "supportive_reflection"
+    ADD escalation_language
+
+  # Step 5: Validate proposed response
+  IF proposed_ai_response:
+    CHECK no imperatives ("you should", "do this")
+    CHECK no moral judgment
+    CHECK no invented data
+    CHECK frameworks_used IN allowed_frameworks
+    CHECK tone == supportive AND concise
+
+  IF any_check_fails:
+    REJECT response
+    REQUEST regeneration WITH stricter constraints
+
+  # Step 6: Apply nudge rules (if applicable)
+  IF response_includes_nudge:
+    CHECK nudge_frequency_limits
+    CHECK cooldown_state
+    LOG nudge_event
+
+  # Step 7: Final disclosure & delivery
+  IF disclosure_flag:
+    ADD brief_context_disclosure
+
+  RETURN approved_response

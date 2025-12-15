@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Literal
 from datetime import datetime
 from uuid import UUID
 
@@ -7,9 +7,45 @@ from pydantic import BaseModel, Field
 
 # --- Schema Definitions ---
 
+# Base Zettel model, representing the full state of a Zettel
+class Zettel(BaseModel):
+    id: str
+    type: Literal["zettel"]
+    title: str
+    body: str
+    created_at: datetime
+    updated_at: datetime
+    links: List[str] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
+    horizon: Literal["none", "vision", "goals", "principles"]
+    contexts: List[str] = Field(default_factory=list)
+    username: str # This is now part of the full Zettel model
+
+# Model for creating a new Zettel (does not include ID, created_at, updated_at, username)
+class ZettelCreate(BaseModel):
+    type: Literal["zettel"] = "zettel"
+    title: str
+    body: str
+    links: List[str] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
+    horizon: Literal["none", "vision", "goals", "principles"] = "none"
+    contexts: List[str] = Field(default_factory=list)
+
+# Model for updating an existing Zettel (all fields optional, except id for consistency)
+class ZettelUpdate(BaseModel):
+    id: str # ID is required for update
+    type: Optional[Literal["zettel"]] = None
+    title: Optional[str] = None
+    body: Optional[str] = None
+    links: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
+    horizon: Optional[Literal["none", "vision", "goals", "principles"]] = None
+    contexts: Optional[List[str]] = None
+    # username should not be updatable by request body
+
 class EmotionEntry(BaseModel):
     id: UUID = Field(default_factory=uuid.uuid4)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
     primary_emotion: str
     secondary_emotions: Optional[List[str]] = None
     valence: float = Field(..., ge=-1.0, le=1.0) # -1.0 (negative) to 1.0 (positive)
@@ -30,13 +66,13 @@ class CalmCompassActionEvent(BaseModel):
     recommendation_id: UUID
     action_type: str # e.g., "suggested_activity", "guided_meditation", "journal_prompt"
     status: str # e.g., "initiated", "completed", "skipped"
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
 
 class InsightCreatedEvent(BaseModel):
     insight_id: UUID
     insight_type: str
     message: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
 
 class ContactProfile(BaseModel):
     id: UUID = Field(default_factory=uuid.uuid4)
@@ -80,7 +116,7 @@ class KnowledgeNode(BaseModel):
 
 class SystemInsight(BaseModel):
     id: UUID = Field(default_factory=uuid.uuid4)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
     insight_type: str # e.g., "feedback_loop", "pattern_detection", "recommendation"
     message: str
     action_recommendations: Optional[List[str]] = None
@@ -94,5 +130,5 @@ class CalmFeedbackRequest(BaseModel):
 
 class RelationLogRequest(BaseModel):
     contact_id: UUID
-    interaction_date: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    interaction_date: Optional[datetime] = Field(default_factory=datetime.now(timezone.utc))
     notes: Optional[str] = None

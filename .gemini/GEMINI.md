@@ -37,6 +37,16 @@ LifeOS is designed to be **commercially viable**, **permissively licensed**, and
 
 Do not introduce scale-oriented infrastructure unless explicitly instructed.
 
+HARD CONSTRAINT:
+All code, prompts, and logic MUST conform to:
+1. MVP Product Specification
+2. Supervisor Prompt
+3. Supervisor Enforcement Pseudocode
+
+If a conflict exists, Supervisor Enforcement Pseudocode takes precedence.
+
+If unsure, STOP and ask for clarification.
+
 ---
 
 ## 3. Prerequisites
@@ -68,6 +78,7 @@ lifeos/
 │   │   └── lifeos-rag-api/
 │   └── frontend/
 ├── docs/
+├── governance/
 ├── System/
 │   └── AI-Context/
 ├── AGENTS.md

@@ -1,0 +1,102 @@
+Agent Build Brief
+
+By Perplexity 2025-12-14
+
+Purpose
+This brief provides step-by-step instructions for junior-level AI coders to implement and modify the Inner Palette, Connection Engine, Prism Clarity Studio, and Engine Room modules, ensuring alignment with the LifeOS Developer Handbook and AGENTS.md.
+
+Module-Specific Instructions
+Inner Palette
+Schema: Use the EmotionEntry schema from the Developer Handbook.
+
+Workflow:
+
+Log emotion with valence, arousal, and context.
+
+Emit emotion_logged event via the event bus.
+
+Route to Calm Compass for grounding or activation.
+
+Guardrails:
+
+Never delete data—only archive.
+
+Ensure each log entry has a timestamp and context.
+
+Connection Engine
+Schema: Use the ContactProfile and TaskItem schemas.
+
+Workflow:
+
+Track relationships and open loops.
+
+Emit contact_updated event when relationships change.
+
+Suggest empathic follow-ups based on emotional context.
+
+Guardrails:
+
+All links must be bidirectional.
+
+Archive only, never delete.
+
+Prism Clarity Studio
+Schema: Use the Reflection and SystemInsight schemas.
+
+Workflow:
+
+Analyze user input for cognitive distortions.
+
+Generate reflective insights and mental model suggestions.
+
+Emit insight_created event.
+
+Guardrails:
+
+Always validate input against the schema.
+
+Archive only, never delete.
+
+Engine Room
+Schema: Use the TaskItem, Project, and Area schemas.
+
+Workflow:
+
+Sync tasks, projects, and areas.
+
+Filter tasks based on emotional state.
+
+Emit task_state_changed event.
+
+Guardrails:
+
+Every project must have at least one next action.
+
+Archive only, never delete.
+
+Actionable Checklists
+ Validate all inputs using the schema.
+
+ Detect type: zettel/project/task/etc.
+
+ Apply bridging rules.
+
+ Maintain bidirectional links.
+
+ Update timestamps.
+
+ Ensure each project has next actions.
+
+ Archive only, never delete.
+
+ Generate pseudo-code for all operations.
+
+ Return both: state changes + reasoning.
+
+Edge Case Handling
+If a module-specific scenario is unclear, stop and ask for human approval.
+
+If an error occurs, stop and ask for human approval.
+
+Philosophical Alignment
+Reinforce the core philosophy and boundaries, ensuring that agents stay aligned with the project’s goals and constraints.

@@ -1,0 +1,346 @@
+---
+title: "Life OS — MVP Product Specification"
+created: 2025-01-15
+last_modified: 2025-01-15
+created_by: "ChatGPT (AI Assistant)"
+description: >
+  Authoritative MVP-level product specification for Life OS.
+  Defines the problem space, user boundaries, feature scope, success criteria,
+  data retention rules, and AI behavior constraints required to validate the
+  core hypothesis of context-aware, constrained AI coaching.
+document_role: >
+  This document is the primary governance and validation contract for the Life OS MVP.
+  It constrains system behavior, enforces scope boundaries, defines audit procedures,
+  and serves as the reference standard for Supervisor Agent enforcement and backend
+  sanity checks during development.
+related_docs:
+  - Global System Prompt (applies everywhere, all agents)
+  - Life OS Supervisor Agent Specification (authority, enforcement, audit rules)
+  - Life OS Architect Prompt (architecture, planning, recovery)
+  - Definition of Done & Recovery Protocol (global heuristics)
+  - AI Prompt Templates (Aura, Nudge Engine, Validation Pass)
+---
+
+
+# 🎯 Life OS: Final MVP Product Specification
+
+## 1. Vision & Goals (The Why)
+
+### Problem Statement
+
+Busy, analytical, system‑building individuals struggle with three interlocking failures:
+
+1. **Context Fragmentation**: Personal data, insights, and intentions scattered across tools and memory.
+2. **Reflection Gap**: Inconsistent self‑awareness despite valuing growth, meaning, and improvement.
+3. **Action Paralysis**: Over‑analysis and system‑building used as avoidance instead of execution.
+
+**Core Insight**: The failure is not tooling but **integration with guardrails**. People need context‑aware guidance that connects daily actions to values without overwhelming or replacing their agency.
+
+---
+
+### Target User
+
+**Primary Persona: The Analytical Architect**
+
+* Analytical, framework‑driven (e.g. INTP‑like)
+* Values evidence, structure, and coherence
+* Struggles with emotional intelligence, relationships, and consistent execution
+* Balances multiple life domains (family, health, work, spiritual life)
+* Known failure mode: building ever‑more complex systems instead of acting
+
+---
+
+### Core Value Proposition
+
+Life OS is a **constrained personal operating system** that combines:
+
+* **Second Brain**: PARA‑informed knowledge organization
+* **Daily Coach**: Context‑aware, pattern‑grounded guidance
+* **Relationship Support**: Reflection and coaching for emotional intelligence
+* **Spiritual Companion**: Values‑aligned reflection (Catholic‑compatible, not doctrinal)
+
+**Differentiator**: Life OS adapts to *the user’s actual data and patterns* while remaining deliberately limited. It explains the “why,” nudges the “next step,” and never replaces decision‑making.
+
+---
+
+### Behavioral Non‑Goals (Critical)
+
+Life OS explicitly does **not**:
+
+* Act as a therapist or moral authority
+* Decide goals, priorities, or values for the user
+* Optimize across conflicting life domains
+* Provide prescriptive life decisions
+* Remember or surface data without user consent
+
+> Life OS supports judgment. It does not substitute for it.
+
+---
+
+## 2. Success Metrics (MVP Validation)
+
+### Primary Metrics
+
+* 40–50 beta users within 6 weeks
+* ≥70% weekly Daily Check‑In completion
+* ≥60% of users act on at least one proactive nudge per week
+
+### Secondary Indicators
+
+* ≥30% reduction in time from insight to action
+* Monthly self‑report of “feeling less overwhelmed”
+* Weekly reflection completion ≥60%
+
+### Kill Metric (Existential Falsifier)
+
+If users report **increased cognitive burden or overwhelm after two weeks**, the MVP is considered failed and must be simplified or halted.
+
+---
+
+## 3. Core MVP Features
+
+### Architectural Loop
+
+**Input → Context → Insight → Nudge → Reflection**
+
+All features must reinforce this loop without expanding scope.
+
+---
+
+### In‑Scope Features
+
+#### F‑1 Secure Authentication
+
+* Firebase Auth (email/password, optional Google)
+* Baseline trust and privacy
+
+#### F‑2 Structured Daily Check‑In
+
+* Default: 1 per day
+* User‑modifiable at any time
+* AI may *suggest* frequency changes but may not auto‑change
+
+**Fields**:
+
+* Mood (1–5)
+* Energy (1–5)
+* Domain ratings (Family, Health, Work, Spiritual: 1–3)
+* ONE Thing completed (Y/N)
+* Optional one‑sentence reflection (encrypted)
+
+---
+
+#### F‑3 Context‑Aware Chat (Aura)
+
+Aura is a **Socratic coaching interface**, not a general chatbot.
+
+**Context Includes**:
+
+* Recent check‑ins (subject to Context Decay)
+* User values and consent flags
+* Active Projects (PARA)
+* Recent conversation history
+
+**Constraints**:
+
+* Questions before advice
+* Framework‑grounded (CBT, GTD, 7 Habits)
+* No invented data
+* Escalation language when distress is detected
+
+---
+
+#### F‑4 Proactive Nudge Engine
+
+Context‑triggered prompts designed to reduce avoidance and restore momentum.
+
+**Rules**:
+
+* Max 1 nudge/day, 3/week
+* Nudges pause after 3 ignored prompts
+* All nudges logged with acknowledgement state
+
+---
+
+#### F‑5 Weekly Review
+
+Guided 10–15 minute reflection:
+
+* Visual summaries (mood/energy)
+* Pattern recognition (AI‑assisted)
+* Structured questions
+* ONE Thing selection
+
+Output saved as timestamped archive entry.
+
+---
+
+#### F‑6 PARA Dashboard
+
+* Projects: Active / On Hold / Archived
+* Areas: Core life domains
+* Resources: Notes, insights
+* Archives: Completed or dormant material
+
+**Attention Rule**: Only Active Projects are included in AI context or nudging.
+
+---
+
+## 4. Data Retention & Memory Lifecycle
+
+### Memory States
+
+* **Active**: Included in AI context
+* **Archived**: Stored, searchable, not proactive
+* **Dormant**: Excluded from AI context unless requested
+* **Deleted**: Permanently removed
+
+---
+
+### Context Decay (Default‑On)
+
+Context Decay controls **AI visibility**, not storage.
+
+**Default Settings**:
+
+* N = 180 days
+* AND‑logic exclusion:
+
+  * Entry age > N days
+  * Entry not accessed in last N days
+
+**Access Includes**:
+
+* Viewed by user
+* Referenced in chat
+* Included in weekly review
+* Explicitly retrieved at user request
+
+---
+
+### User Overrides
+
+* Time‑range requests override decay
+* Entry‑level pinning:
+
+  * Always available
+  * Never available unless requested
+* Global settings:
+
+  * 30 / 90 / 180 / 365 days
+  * Never decay
+
+---
+
+### Supervisor Enforcement
+
+* No silent recall of decayed data
+* Disclosure when expanding context
+* Summary‑first retrieval if overload risk exists
+
+---
+
+## 5. Consent & Agency
+
+Stored per user:
+
+* Coaching consent
+* Proactive nudges consent
+* Pattern analysis consent
+* Long‑term memory consent
+
+Features must degrade gracefully when consent is withdrawn.
+
+---
+
+## 6. Supervisor Agent (Hierarchy & Enforcement)
+
+### Authority Stack
+
+1. User
+2. Supervisor Agent
+3. Functional Agents (Aura, Nudge Engine, etc.)
+
+### Supervisor Powers
+
+* Enforce scope and tone
+* Veto prescriptive or moralizing responses
+* Force question‑only or reflection‑only modes
+* Block out‑of‑scope behavior
+
+### Supervisor Limitations
+
+* Cannot coach or advise
+* Cannot redefine user values
+* Cannot infer diagnoses
+
+> The Supervisor keeps Life OS small, honest, and safe.
+
+---
+
+## 7. Technical Stack (MVP)
+
+* **Frontend**: React Native (Expo)
+* **Backend**: Firebase (Firestore, Auth, Cloud Functions)
+* **AI**: Gemini 1.5 Flash (fallback GPT‑4o‑mini)
+* **Security**:
+
+  * Encryption at rest
+  * Field‑level encryption for reflections
+  * Strict security rules
+
+---
+
+## 8. Risks & Mitigation
+
+* AI overreach → Supervisor veto + constraints
+* User overwhelm → Kill metric + nudging limits
+* Scope creep → Strict out‑of‑scope enforcement
+* Privacy breach → Encryption + audits
+
+---
+
+## 9. Audit Usage Guide 🔦
+
+**When**:
+
+* Before adding features
+* After user confusion or distress
+* Weekly sprint review
+
+**How**:
+
+1. Re‑read Vision & Non‑Goals
+2. Check Out‑of‑Scope list
+3. Validate Supervisor enforcement
+4. Compare backend behavior to spec
+
+**Red Flags**:
+
+* Increasing verbosity
+* Moral language
+* New frameworks appearing
+* User asking “What should I do?” and receiving direct answers
+
+If violated, cut features before adding safeguards.
+
+---
+
+## 10. MVP Validation Criteria
+
+The MVP is validated if:
+
+* ≥40 weekly active users
+* ≥70% weekly check‑in rate
+* ≥80% AI insights rated helpful
+* <5% week‑one churn
+
+If not, simplify ruthlessly.
+
+---
+
+## Final Principle
+
+Life OS is an experiment in **constrained intelligence**.
+
+If a feature does not help the user take a meaningful step *today*, it does not belong in the MVP.
