@@ -3,9 +3,15 @@ title: "AI Agent Guide"
 type: "Documentation"
 status: "Active"
 created: "2024-07-25"
-last_updated: "2025-12-12"
+last_updated: "2025-12-14"
 tags: ["documentation", "guide", "agents", "development", "workflow"]
 ---
+
+This file is replaced with these files:
+`LifeOS_Agentic_AI_Coder_Master_Instructions.md`
+`AGENTS.md`
+`/.gemini/GEMINI.md`
+Conflicts are resolved in that order.
 
 # AI Agent Guide
 
