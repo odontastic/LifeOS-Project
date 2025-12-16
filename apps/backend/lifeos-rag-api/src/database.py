@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, Text, Float

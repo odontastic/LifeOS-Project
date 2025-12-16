@@ -1,59 +1,64 @@
-import os
 import json
+import logging
 from datetime import datetime
-from typing import Dict, Any, Type, List, Optional
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from dotenv import load_dotenv
-import logging # Import logging
+from typing import Any, Dict, List, Optional, Type, AsyncGenerator # Added AsyncGenerator
 
-from event_sourcing.event_store import EventStore
+from arango.database import StandardDatabase
+from dotenv import load_dotenv
+from qdrant_client import QdrantClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
 from database import (
     Base, StoredEvent,
     ZettelReadModel, ProjectReadModel, AreaReadModel, ResourceReadModel,
     TaskReadModel, GoalReadModel, ReflectionReadModel, JournalEntryReadModel,
     EmotionReadModel, BeliefReadModel, TriggerReadModel
 )
-from models.zettel import Zettel # Import Pydantic models for type checking and conversion
-from models.project import Project
+from event_sourcing.event_store import EventStore
+from services.qdrant_service import QdrantService # New import
+from services.arangodb_service import ArangoDBService # New import
 from models.area import Area
+from models.belief import Belief
+from models.emotion import Emotion
+from models.goal import Goal
+from models.journal_entry import JournalEntry
+from models.project import Project
+from models.reflection import Reflection
 from models.resource import Resource
 from models.task import Task
-from models.goal import Goal
-from models.reflection import Reflection
-from models.journal_entry import JournalEntry
-from models.emotion import Emotion
-from models.belief import Belief
 from models.trigger import Trigger
+from models.zettel import Zettel
 
 
 # Load environment variables
 load_dotenv()
-# SQLITE_READ_MODELS_DB_PATH is now managed by the injected engine for tests
-# os.makedirs(os.path.dirname(SQLITE_READ_MODELS_DB_PATH), exist_ok=True)
 
-logger = logging.getLogger(__name__) # Initialize logger
+logger = logging.getLogger(__name__)
 
 class EventProcessor:
-    def __init__(self, event_store: EventStore, engine): # Requires an engine to be passed
+    def __init__(self, event_store: EventStore, engine, qdrant_client: QdrantClient, arangodb_db: StandardDatabase):
         self.event_store = event_store
         self.engine = engine
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+        self.qdrant_client = qdrant_client
+        self.arangodb_db = arangodb_db
+        self.qdrant_service = QdrantService(qdrant_client) # New service instantiation
+        self.arangodb_service = ArangoDBService(arangodb_db) # New service instantiation
 
-        # Mapping of event types to handler methods
         self.event_handlers: Dict[str, callable] = {
-            "ZettelCreated": self._handle_zettel_created,
-            "ZettelUpdated": self._handle_zettel_updated,
-            "ZettelDeleted": self._handle_zettel_deleted,
+            "ZettelCreated": self._handle_zettel_created_qdrant_and_readmodel, # New combined handler
+            "ZettelUpdated": self._handle_zettel_updated_qdrant_and_readmodel, # New combined handler
+            "ZettelDeleted": self._handle_zettel_deleted_qdrant_and_readmodel, # New combined handler
             "ProjectCreated": self._handle_project_created,
             "ProjectUpdated": self._handle_project_updated,
             "ProjectDeleted": self._handle_project_deleted,
             "AreaCreated": self._handle_area_created,
             "AreaUpdated": self._handle_area_updated,
             "AreaDeleted": self._handle_area_deleted,
-            "ResourceCreated": self._handle_resource_created,
-            "ResourceUpdated": self._handle_resource_updated,
-            "ResourceDeleted": self._handle_resource_deleted,
+            "ResourceCreated": self._handle_resource_created_qdrant_and_readmodel, # New combined handler
+            "ResourceUpdated": self._handle_resource_updated_qdrant_and_readmodel, # New combined handler
+            "ResourceDeleted": self._handle_resource_deleted_qdrant_and_readmodel, # New combined handler
             "TaskCreated": self._handle_task_created,
             "TaskUpdated": self._handle_task_updated,
             "TaskDeleted": self._handle_task_deleted,
@@ -77,28 +82,33 @@ class EventProcessor:
             "TriggerDeleted": self._handle_trigger_deleted,
         }
 
-    def _get_db(self) -> Session:
-        return self.SessionLocal()
+    async def _get_db(self) -> AsyncGenerator[Session, None]: # Converted to async generator
+        db = self.SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
 
-    def _apply_event(self, event: StoredEvent):
+    async def _apply_event(self, event: StoredEvent):
         handler = self.event_handlers.get(event.event_type)
         if handler:
             payload = json.loads(event.payload) # Deserialize JSON payload
-            with self._get_db() as db:
-                handler(db, payload)
-                db.commit() # Commit after each event application for simplicity, can be batched
+            async for db in self._get_db(): # Use async for to get db session
+                await handler(db, payload)
+                await db.commit() # Await commit for async session
 
-    def replay_events(self):
+    async def replay_events(self):
         """Fetches all events from the event store and applies them to rebuild the read models."""
-        with self._get_db() as db: # Creates a new session for the EventProcessor's engine
+        async for db in self._get_db(): # Use async for to get db session
             # Clear existing read models before replaying
             for table in reversed(Base.metadata.sorted_tables): # Delete in reverse order for foreign key constraints
-                db.execute(table.delete())
-            db.commit()
+                await db.execute(table.delete()) # Await execute
+            await db.commit() # Await commit
 
         events = self.event_store.get_all_events()
         for event in events:
-            self._apply_event(event)
+            await self._apply_event(event) # Await _apply_event
+
 
     @staticmethod # Mark as static method
     def _convert_str_to_datetime(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -112,26 +122,245 @@ class EventProcessor:
                 except ValueError:
                     pass # Not a datetime string, ignore
         return payload
+    # --- Qdrant & ReadModel Combined Handlers (for Zettel) ---
+    async def _handle_zettel_created_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel update
+            zettel = ZettelReadModel(**payload)
+            db.add(zettel)
+
+            # Update Qdrant
+            content = payload.get("body", "") # Assuming 'body' for Zettel content
+            doc_id = payload.get("id")
+            if content and doc_id:
+                await self.qdrant_service.create_collection_if_not_exists("lifeos_notes")
+                await self.qdrant_service.upsert_vector(
+                    collection_name="lifeos_notes",
+                    doc_id=doc_id,
+                    content=content, # This will be embedded by QdrantService
+                    metadata=payload # Pass entire payload as metadata
+                )
+        except Exception as e:
+            logger.error(f"Error processing ZettelCreated event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    async def _handle_zettel_updated_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel update
+            payload_converted = EventProcessor._convert_str_to_datetime(payload)
+            db.query(ZettelReadModel).filter(ZettelReadModel.id == payload_converted["id"]).update(payload_converted)
+
+            # Update Qdrant
+            content = payload.get("body", "")
+            doc_id = payload.get("id")
+            if content and doc_id:
+                await self.qdrant_service.create_collection_if_not_exists("lifeos_notes")
+                await self.qdrant_service.upsert_vector( # Upsert handles update if doc_id exists
+                    collection_name="lifeos_notes",
+                    doc_id=doc_id,
+                    content=content,
+                    metadata=payload
+                )
+        except Exception as e:
+            logger.error(f"Error processing ZettelUpdated event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    async def _handle_zettel_deleted_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel delete
+            db.query(ZettelReadModel).filter(ZettelReadModel.id == payload["id"]).delete()
+
+            # Delete from Qdrant
+            doc_id = payload.get("id")
+            if doc_id:
+                await self.qdrant_service.delete_vector(
+                    collection_name="lifeos_notes",
+                    doc_id=doc_id
+                )
+        except Exception as e:
+            logger.error(f"Error processing ZettelDeleted event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    # --- Qdrant & ReadModel Combined Handlers (for Resource) ---
+    async def _handle_resource_created_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel update
+            resource = ResourceReadModel(**payload)
+            db.add(resource)
+
+            # Update Qdrant
+            content = payload.get("body", "") # Assuming 'body' for Resource content
+            doc_id = payload.get("id")
+            if content and doc_id:
+                await self.qdrant_service.create_collection_if_not_exists("lifeos_resources")
+                await self.qdrant_service.upsert_vector(
+                    collection_name="lifeos_resources",
+                    doc_id=doc_id,
+                    content=content,
+                    metadata=payload
+                )
+        except Exception as e:
+            logger.error(f"Error processing ResourceCreated event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    async def _handle_resource_updated_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel update
+            payload_converted = EventProcessor._convert_str_to_datetime(payload)
+            db.query(ResourceReadModel).filter(ResourceReadModel.id == payload_converted["id"]).update(payload_converted)
+
+            # Update Qdrant
+            content = payload.get("body", "")
+            doc_id = payload.get("id")
+            if content and doc_id:
+                await self.qdrant_service.create_collection_if_not_exists("lifeos_resources")
+                await self.qdrant_service.upsert_vector(
+                    collection_name="lifeos_resources",
+                    doc_id=doc_id,
+                    content=content,
+                    metadata=payload
+                )
+        except Exception as e:
+            logger.error(f"Error processing ResourceUpdated event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    async def _handle_resource_deleted_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel delete
+            db.query(ResourceReadModel).filter(ResourceReadModel.id == payload["id"]).delete()
+
+            # Delete from Qdrant
+            doc_id = payload.get("id")
+            if doc_id:
+                await self.qdrant_service.delete_vector(
+                    collection_name="lifeos_resources",
+                    doc_id=doc_id
+                )
+        except Exception as e:
+            logger.error(f"Error processing ResourceDeleted event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+
+    # --- Qdrant & ReadModel Combined Handlers (for Zettel) ---
+    async def _handle_zettel_created_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel update
+            zettel = ZettelReadModel(**payload)
+            db.add(zettel)
+
+            # Update Qdrant
+            content = payload.get("body", "") # Assuming 'body' for Zettel content
+            doc_id = payload.get("id")
+            if content and doc_id:
+                await self.qdrant_service.create_collection_if_not_exists("lifeos_notes")
+                await self.qdrant_service.upsert_vector(
+                    collection_name="lifeos_notes",
+                    doc_id=doc_id,
+                    content=content, # This will be embedded by QdrantService
+                    metadata=payload # Pass entire payload as metadata
+                )
+        except Exception as e:
+            logger.error(f"Error processing ZettelCreated event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    async def _handle_zettel_updated_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel update
+            payload_converted = EventProcessor._convert_str_to_datetime(payload)
+            db.query(ZettelReadModel).filter(ZettelReadModel.id == payload_converted["id"]).update(payload_converted)
+
+            # Update Qdrant
+            content = payload.get("body", "")
+            doc_id = payload.get("id")
+            if content and doc_id:
+                await self.qdrant_service.create_collection_if_not_exists("lifeos_notes")
+                await self.qdrant_service.upsert_vector( # Upsert handles update if doc_id exists
+                    collection_name="lifeos_notes",
+                    doc_id=doc_id,
+                    content=content,
+                    metadata=payload
+                )
+        except Exception as e:
+            logger.error(f"Error processing ZettelUpdated event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    async def _handle_zettel_deleted_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel delete
+            db.query(ZettelReadModel).filter(ZettelReadModel.id == payload["id"]).delete()
+
+            # Delete from Qdrant
+            doc_id = payload.get("id")
+            if doc_id:
+                await self.qdrant_service.delete_vector(
+                    collection_name="lifeos_notes",
+                    doc_id=doc_id
+                )
+        except Exception as e:
+            logger.error(f"Error processing ZettelDeleted event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    # --- Qdrant & ReadModel Combined Handlers (for Resource) ---
+    async def _handle_resource_created_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel update
+            resource = ResourceReadModel(**payload)
+            db.add(resource)
+
+            # Update Qdrant
+            content = payload.get("body", "") # Assuming 'body' for Resource content
+            doc_id = payload.get("id")
+            if content and doc_id:
+                await self.qdrant_service.create_collection_if_not_exists("lifeos_resources")
+                await self.qdrant_service.upsert_vector(
+                    collection_name="lifeos_resources",
+                    doc_id=doc_id,
+                    content=content,
+                    metadata=payload
+                )
+        except Exception as e:
+            logger.error(f"Error processing ResourceCreated event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    async def _handle_resource_updated_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel update
+            payload_converted = EventProcessor._convert_str_to_datetime(payload)
+            db.query(ResourceReadModel).filter(ResourceReadModel.id == payload_converted["id"]).update(payload_converted)
+
+            # Update Qdrant
+            content = payload.get("body", "")
+            doc_id = payload.get("id")
+            if content and doc_id:
+                await self.qdrant_service.create_collection_if_not_exists("lifeos_resources")
+                await self.qdrant_service.upsert_vector(
+                    collection_name="lifeos_resources",
+                    doc_id=doc_id,
+                    content=content,
+                    metadata=payload
+                )
+        except Exception as e:
+            logger.error(f"Error processing ResourceUpdated event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
+    async def _handle_resource_deleted_qdrant_and_readmodel(self, db: Session, payload: Dict[str, Any]):
+        try:
+            # Handle ReadModel delete
+            db.query(ResourceReadModel).filter(ResourceReadModel.id == payload["id"]).delete()
+
+            # Delete from Qdrant
+            doc_id = payload.get("id")
+            if doc_id:
+                await self.qdrant_service.delete_vector(
+                    collection_name="lifeos_resources",
+                    doc_id=doc_id
+                )
+        except Exception as e:
+            logger.error(f"Error processing ResourceDeleted event for Qdrant (payload: {payload}): {e}", exc_info=True)
+            raise
+
 
     # --- Zettel Handlers ---
-    def _handle_zettel_created(self, db: Session, payload: Dict[str, Any]):
-        print(f"DEBUG(EventProcessor): _handle_zettel_created received payload: {payload}")
-        try:
-            zettel = ZettelReadModel(**payload) # Pass payload to model constructor
-            db.add(zettel)
-            print(f"DEBUG(EventProcessor): Added zettel to session: {zettel.id}")
-            db.commit()
-            print(f"DEBUG(EventProcessor): Committed zettel to database: {zettel.id}")
-        except Exception as e:
-            logger.error(f"Error creating ZettelReadModel from payload: {payload}, Error: {e}", exc_info=True)
-            raise # Re-raise to prevent silent failures
-
-    def _handle_zettel_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(ZettelReadModel).filter(ZettelReadModel.id == payload["id"]).update(payload)
-
-    def _handle_zettel_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(ZettelReadModel).filter(ZettelReadModel.id == payload["id"]).delete()
 
     # --- Project Handlers ---
     def _handle_project_created(self, db: Session, payload: Dict[str, Any]):

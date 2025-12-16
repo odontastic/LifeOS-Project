@@ -56,7 +56,12 @@ from event_sourcing.event_processor import EventProcessor # Import the EventProc
 # Initialize the global EventStore instance
 event_store_instance: EventStore = EventStore(engine=engine)
 # Initialize the global EventProcessor instance
-event_processor_instance: EventProcessor = EventProcessor(event_store=event_store_instance, engine=engine)
+event_processor_instance: EventProcessor = EventProcessor(
+    event_store=event_store_instance,
+    engine=engine,
+    qdrant_client=_qdrant_client_instance,
+    arangodb_db=_arangodb_graph
+)
 
 
 # --- Logging Setup ---
@@ -121,10 +126,12 @@ def get_event_processor() -> EventProcessor:
 app = FastAPI(title="LifeOS RAG API", version="20.0.0")
 
 _arangodb_graph = None # Global variable to hold the ArangoDB graph instance
+_qdrant_client_instance = None # Global variable to hold the Qdrant client instance
 
 @app.on_event("startup")
 async def startup_event():
     global _arangodb_graph # Declare intention to modify the global variable
+    global _qdrant_client_instance # Declare intention to modify the global Qdrant client instance
     Base.metadata.create_all(bind=engine)
     if redis_client:
         await FastAPILimiter.init(redis=redis_client)
@@ -135,6 +142,14 @@ async def startup_event():
     _arangodb_graph = init_lifeos_graph()
     if not _arangodb_graph:
         logger.error("Failed to initialize ArangoDB graph. Graph operations will not work.")
+
+    # Initialize Qdrant client
+    try:
+        _qdrant_client_instance = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+        # Optional: Check Qdrant connectivity here if desired
+        logger.info("Qdrant client initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize Qdrant client: {e}")
 
     # Replay events to build read models
     event_processor_instance.replay_events()
