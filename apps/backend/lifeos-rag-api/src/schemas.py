@@ -89,6 +89,16 @@ class ContactUpdatedEvent(BaseModel):
     sentiment_summary: Optional[str] = None
     open_loops: Optional[List[str]] = None
 
+class ContactCreatedEvent(BaseModel):
+    id: UUID
+    name: str
+    relation_type: Optional[str] = None
+    sentiment_summary: Optional[str] = None
+    open_loops: Optional[List[str]] = None
+    context_history: Optional[List[str]] = None
+    last_interaction: Optional[datetime] = None
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
+
 class TaskItem(BaseModel):
     id: UUID = Field(default_factory=uuid.uuid4)
     title: str
@@ -127,6 +137,12 @@ class CalmFeedbackRequest(BaseModel):
     insight_id: UUID
     rating: int = Field(..., ge=1, le=5)
     comment: Optional[str] = None
+
+class SystemInsightFeedbackEvent(BaseModel):
+    insight_id: UUID
+    feedback_rating: int
+    feedback_comment: Optional[str] = None
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
 
 class RelationLogRequest(BaseModel):
     contact_id: UUID

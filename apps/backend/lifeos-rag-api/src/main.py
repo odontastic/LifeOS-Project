@@ -3,7 +3,7 @@ import uuid
 import json
 import logging
 import time # Import the time module
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, List
 from uuid import UUID
 
@@ -29,7 +29,7 @@ from config import (
     ALLOWED_ORIGINS, LOG_LEVEL, ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
-from graph_db import init_lifeos_graph, insert_vertex, insert_edge # Import ArangoDB specific functions
+from graph_db import init_lifeos_graph # Import ArangoDB specific functions
 
 from extractor import get_schema_extractor
 
@@ -44,7 +44,7 @@ from auth import ( # Import auth functions and models
     create_access_token, get_current_user
 )
 from database import get_db, Base, engine, User, EmotionEntryModel, SystemInsightModel, ContactProfileModel, TaskItemModel, KnowledgeNodeModel
-from schemas import EmotionEntry, EmotionLoggedEvent, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, RelationLogRequest # Import Pydantic schemas for entities
+from schemas import EmotionEntry, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, RelationLogRequest, SystemInsightFeedbackEvent, ContactCreatedEvent # Import Pydantic schemas for entities
 from crud import create_item, get_item_by_id, get_items, update_item, delete_item, get_db_core_session
 from calm_compass import process_emotion_entry_for_calm_compass, update_calm_compass_model_with_feedback # Import Calm Compass processing
 
@@ -266,23 +266,31 @@ async def log_emotion(emotion_entry: EmotionEntry, db: Session = Depends(get_db)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     logger.info(f"User '{user.username}' logging emotion: {emotion_entry.primary_emotion}")
     
-    # Save to SQLite
-    created_emotion = create_item(db, EmotionEntryModel, emotion_entry)
-    
-    # Emit event through EmotionContextBus
-    event_payload = EmotionLoggedEvent(
-        emotion_id=emotion_entry.id,
-        primary_emotion=emotion_entry.primary_emotion,
-        valence=emotion_entry.valence,
-        arousal=emotion_entry.arousal,
-        context_tags=emotion_entry.context_tags
+    # Emit EmotionCreated event
+    # created_emotion = create_item(db, EmotionEntryModel, emotion_entry) # Removed direct CRUD
+    event_payload_dict = emotion_entry.model_dump(mode='json') # Get dict representation for payload
+
+    emotion_created_event = EventPydantic(
+        event_id=str(uuid.uuid4()),
+        event_type="EmotionCreated",
+        timestamp=datetime.now(timezone.utc), # Ensure timezone aware datetime
+        payload=event_payload_dict,
+        schema_version="1.0"
     )
-    event_bus.emit("emotion_logged", event_payload)
+    # Append event to the store
+    event_store_instance.append_event(
+        event_id=emotion_created_event.event_id,
+        event_type=emotion_created_event.event_type,
+        timestamp=emotion_created_event.timestamp,
+        payload=emotion_created_event.payload,
+        schema_version=emotion_created_event.schema_version
+    )
+    logger.info(f"Emitted EmotionCreated event for emotion_id: {emotion_entry.id}")
     
-    # Process the emotion with Calm Compass
-    process_emotion_entry_for_calm_compass(db, created_emotion)
+    # Process the emotion with Calm Compass (now using the original emotion_entry)
+    process_emotion_entry_for_calm_compass(db, emotion_entry) # Pass the original Pydantic model
     
-    return created_emotion
+    return emotion_entry
 
 @app.get("/calm/recommend", response_model=Dict[str, Any])
 async def get_calm_recommendation(db: Session = Depends(get_db), username: str = Depends(get_current_user)):
@@ -332,33 +340,28 @@ async def submit_calm_feedback(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     logger.info(f"User '{user.username}' submitting feedback for insight: {feedback.insight_id}")
     
-    # Retrieve the SystemInsight
-    insight_to_update = get_item_by_id(db, SystemInsightModel, feedback.insight_id)
-    if not insight_to_update:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SystemInsight not found")
-    
-    # Update the SystemInsight with feedback.
-    # We need to construct a Pydantic model for update or pass dict directly to update_item
-    # For now, let's update by creating a new SystemInsight Pydantic model with feedback fields
-    # This assumes update_item can handle partial updates if fields are not provided in schema_item
-    
-    # A more robust update_item would accept a dict and apply changes
-    # For now, we will create a partial schema for update
-    class SystemInsightUpdate(BaseModel):
-        feedback_rating: Optional[int] = None
-        feedback_comment: Optional[str] = None
-        
-    update_data = SystemInsightUpdate(
-        feedback_rating=feedback.rating,
-        feedback_comment=feedback.comment
+    # Emit SystemInsightFeedbackEvent
+    event_payload_dict = feedback.model_dump(mode='json') # Get dict representation for payload
+
+    system_insight_feedback_event = EventPydantic(
+        event_id=str(uuid.uuid4()),
+        event_type="SystemInsightFeedback", # A new event type for feedback
+        timestamp=datetime.now(timezone.utc),
+        payload=event_payload_dict,
+        schema_version="1.0"
     )
+    event_store_instance.append_event(
+        event_id=system_insight_feedback_event.event_id,
+        event_type=system_insight_feedback_event.event_type,
+        timestamp=system_insight_feedback_event.timestamp,
+        payload=system_insight_feedback_event.payload,
+        schema_version=system_insight_feedback_event.schema_version
+    )
+    logger.info(f"Emitted SystemInsightFeedback event for insight_id: {feedback.insight_id}")
     
-    updated_insight = update_item(db, SystemInsightModel, feedback.insight_id, update_data)
-    
-    if not updated_insight:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update SystemInsight with feedback.")
-    
-    # Integrate Feedback Reinforcement Learning for Calm Compass
+    # The actual update of SystemInsight will be handled by the EventProcessor.
+    # We still need to integrate Feedback Reinforcement Learning for Calm Compass.
+    # Ideally, this would also be event-driven or triggered by the EventProcessor.
     update_calm_compass_model_with_feedback(feedback.insight_id, feedback.rating)
     
     return {"message": "Feedback submitted successfully for SystemInsight."}
@@ -499,19 +502,27 @@ async def create_contact(contact_profile: ContactProfile, db: Session = Depends(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     logger.info(f"User '{user.username}' creating contact: {contact_profile.name}")
     
-    # Save to SQLite
-    created_contact = create_item(db, ContactProfileModel, contact_profile)
-    
-    # Emit event through EmotionContextBus
-    event_payload = ContactUpdatedEvent(
-        contact_id=contact_profile.id,
-        name=contact_profile.name,
-        sentiment_summary=contact_profile.sentiment_summary,
-        open_loops=contact_profile.open_loops
+    # Emit ContactCreated event
+    event_payload_dict = contact_profile.model_dump(mode='json') # Get dict representation for payload
+
+    contact_created_event = EventPydantic(
+        event_id=str(uuid.uuid4()),
+        event_type="ContactCreated", # New event type for contact creation
+        timestamp=datetime.now(timezone.utc),
+        payload=event_payload_dict,
+        schema_version="1.0"
     )
-    event_bus.emit("contact_updated", event_payload)
+    # Append event to the store
+    event_store_instance.append_event(
+        event_id=contact_created_event.event_id,
+        event_type=contact_created_event.event_type,
+        timestamp=contact_created_event.timestamp,
+        payload=contact_created_event.payload,
+        schema_version=contact_created_event.schema_version
+    )
+    logger.info(f"Emitted ContactCreated event for contact_id: {contact_profile.id}")
     
-    return created_contact
+    return contact_profile
 
 async def retrieve_contact(contact_id: UUID, db: Session = Depends(get_db), username: str = Depends(get_current_user)):
     user = get_user_by_username(db, username=username)
@@ -619,7 +630,7 @@ async def ingest_data(request: IngestRequest, db: Session = Depends(get_db), cur
             # Determine collection name based on node type or metadata
             # For simplicity, let's use a generic 'LlamaNodes' collection for now
             vertex_data = {"_key": node.id_, "text": node.text, "metadata": node.metadata}
-            insert_vertex(_arangodb_graph, "LlamaNodes", vertex_data)
+            # insert_vertex(_arangodb_graph, "LlamaNodes", vertex_data) # This should be replaced with event emission
         
         for rel in high_confidence_rels:
             # Determine edge collection name
@@ -628,7 +639,7 @@ async def ingest_data(request: IngestRequest, db: Session = Depends(get_db), cur
             from_key = rel.source_node.node_id
             to_key = rel.target_node.node_id
             edge_data = {"properties": rel.properties, "from_collection": "LlamaNodes", "to_collection": "LlamaNodes"}
-            insert_edge(_arangodb_graph, edge_collection_name, from_key, to_key, edge_data)
+            # insert_edge(_arangodb_graph, edge_collection_name, from_key, to_key, edge_data) # This should be replaced with event emission
 
         end_time = time.time() # End timer
         duration = (end_time - start_time) * 1000 # Duration in ms
