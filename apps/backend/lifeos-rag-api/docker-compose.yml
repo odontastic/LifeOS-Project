@@ -14,28 +14,32 @@ services:
   backend-api:
     build: .
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       # IMPORTANT: Create a 'notes' directory in this project's root and place your documents there.
       - ./notes:/app/notes:ro
     networks:
       - lifeos-net
     depends_on:
-      - neo4j
+      - arangodb # Changed from neo4j
       - qdrant
       - redis
     env_file:
       - .env
-
-  neo4j:
-    image: neo4j:5
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    volumes:
-      - neo4j-data:/data
     environment:
-      NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+      ARANGODB_HOST: http://arangodb:8529
+
+
+  arangodb: # Added ArangoDB service
+    image: arangodb/arangodb:3.12.0 # Specify a version
+    ports:
+      - "8529:8529"
+    environment:
+      ARANGO_ROOT_PASSWORD: ${ARANGODB_PASSWORD}
+      ARANGO_DB_NAME: ${ARANGODB_DB_NAME} # Optional: Auto-create database
+    volumes:
+      - arangodb-data:/var/lib/arangodb3
+      - arangodb-apps:/var/lib/arangodb3-apps
     networks:
       - lifeos-net
 
@@ -60,5 +64,6 @@ networks:
   lifeos-net:
 
 volumes:
-  neo4j-data:
+  arangodb-data: # Added ArangoDB volumes
+  arangodb-apps:
   qdrant-data:

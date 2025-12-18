@@ -2,9 +2,12 @@ from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 import uuid
 from datetime import datetime, timezone
-
-from main import get_event_store, get_event_processor
+from dependencies import get_event_store, get_event_processor
 from auth import get_current_user
+
+
+
+
 from event_sourcing.event_store import EventStore
 from event_sourcing.event_processor import EventProcessor
 from event_sourcing.models import Event as EventPydantic
