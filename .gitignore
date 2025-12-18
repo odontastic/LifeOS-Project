@@ -1,1 +1,7 @@
 apps/frontend/LifeOS-Web/node_modules/
+
+# Untracked files/directories
+.github/
+repo_scan_index.py
+resources/
+scripts/
