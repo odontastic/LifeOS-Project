@@ -23,7 +23,7 @@ from qdrant_client.http.models import Distance, VectorParams # Needed for Qdrant
 
 from fastapi_limiter import FastAPILimiter # Import FastAPILimiter
 
-from config import (
+from src.config import (
     NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD,
     QDRANT_URL, ARANGODB_HOST, ARANGODB_DB, ARANGODB_USER, ARANGODB_PASSWORD, QDRANT_API_KEY, QDRANT_GRPC_PORT,
     REDIS_HOST, REDIS_PORT, REDIS_DB,
@@ -42,8 +42,14 @@ from auth import ( # Import auth functions and models
     create_user, get_user_by_username, verify_password,
     create_access_token, get_current_user
 )
-from database import get_db, Base, engine, User, EmotionEntryModel, SystemInsightModel, ContactProfileModel, TaskItemModel, TaskReadModel
-from schemas import EmotionEntry, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, SystemInsightFeedbackEvent, ContactCreatedEvent, ContactDeletedEvent, NodeCreatedEvent, EdgeCreatedEvent, KnowledgeNodeEvent, RelationLoggedEvent # Import Pydantic schemas for entities
+from database import (
+    get_db, Base, engine, User, StoredEvent,
+    ZettelReadModel, ProjectReadModel, AreaReadModel, ResourceReadModel,
+    TaskReadModel, GoalReadModel, ReflectionReadModel, JournalEntryReadModel,
+    EmotionReadModel, BeliefReadModel, TriggerReadModel,
+    EmotionEntryModel, ContactProfileModel, TaskItemModel, KnowledgeNodeModel, SystemInsightModel
+)
+from src.schemas import EmotionEntry, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, SystemInsightFeedbackEvent, ContactCreatedEvent, ContactDeletedEvent, NodeCreatedEvent, EdgeCreatedEvent, KnowledgeNodeEvent, RelationLoggedEvent # Import Pydantic schemas for entities
 from crud import create_item, get_item_by_id, get_items, update_item, delete_item, get_db_core_session
 from calm_compass import process_emotion_entry_for_calm_compass, update_calm_compass_model_with_feedback # Import Calm Compass processing
 
@@ -63,6 +69,10 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+# Explicitly set log levels for event_sourcing modules to DEBUG
+logging.getLogger("event_sourcing.event_processor").setLevel(logging.DEBUG)
+logging.getLogger("event_sourcing.event_store").setLevel(logging.DEBUG)
 
 # --- Redis Client ---
 redis_client = None # Declare globally, initialized asynchronously
@@ -120,7 +130,14 @@ app = FastAPI(title="LifeOS RAG API", version="20.0.0")
 @app.on_event("startup")
 async def startup_event():
     await setup_redis()
-    Base.metadata.create_all(bind=engine)
+    
+    logger.info(f"Attempting to create database tables. Tables known to Base.metadata: {list(Base.metadata.tables.keys())}")
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created/checked successfully.")
+    except Exception as e:
+        logger.error(f"Error creating database tables: {e}", exc_info=True)
+
     if redis_client:
         await FastAPILimiter.init(redis=redis_client)
     else:
@@ -452,6 +469,8 @@ async def update_para_node(knowledge_node: KnowledgeNode, db: Session = Depends(
         payload=event_payload_dict,
         schema_version="1.0"
     )
+    # PHASE4: KnowledgeNodeReadModel will be introduced in Phase 4.
+    # Until then, events are validated but not materialized into a dedicated read model.
     event_store_instance.append_event(
         event_id=knowledge_node_event.event_id,
         event_type=knowledge_node_event.event_type,

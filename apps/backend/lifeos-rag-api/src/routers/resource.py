@@ -1,6 +1,8 @@
 from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 import uuid
+import asyncio # Added import
+
 from dependencies import get_event_store, get_event_processor
 from auth import get_current_user
 from event_sourcing.event_store import EventStore
@@ -15,10 +17,11 @@ router = APIRouter()
 async def create_resource(
     resource: Resource, 
     event_store: EventStore = Depends(get_event_store),
+    event_processor: EventProcessor = Depends(get_event_processor), # Inject EventProcessor
     username: str = Depends(get_current_user)
 ):
+    resource.username = username # Set the username from the authenticated user
     payload = resource.model_dump()
-    payload["username"] = username
     event = EventPydantic(
         event_type="ResourceCreated",
         payload=payload,
@@ -30,7 +33,18 @@ async def create_resource(
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Explicitly apply the event to the EventProcessor to update the read model immediately
+    event_processor._apply_event(event)
+    await asyncio.sleep(0.1) # Added a small sleep to allow db to settle 
     return resource
+
+@router.get("/debug_all", response_model=List[Resource], include_in_schema=False)
+async def debug_list_all_resources(
+    event_processor: EventProcessor = Depends(get_event_processor)
+):
+    """Debug endpoint to list all resources for all users."""
+    all_resources_data = event_processor.get_all_read_models(ResourceReadModel)
+    return [Resource(**data) for data in all_resources_data]
 
 @router.get("/{resource_id}", response_model=Resource)
 async def read_resource(

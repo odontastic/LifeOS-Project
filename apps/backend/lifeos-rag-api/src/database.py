@@ -11,7 +11,7 @@ from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 # --- Base and Engine ---
 Base = declarative_base()
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./lifeos_core.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:////app/lifeos_core.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
@@ -273,6 +273,9 @@ class SystemInsightModel(Base):
     action_recommendations = Column(Text) # Stored as JSON string
     feedback_rating = Column(Integer) # User feedback rating (e.g., 1-5)
     feedback_comment = Column(Text) # User feedback comment
+
+SystemInsightReadModel = SystemInsightModel # Alias for consistency in EventProcessor
+ContactProfileReadModel = ContactProfileModel # Alias for consistency in EventProcessor
 
 def get_db():
     db = SessionLocal()

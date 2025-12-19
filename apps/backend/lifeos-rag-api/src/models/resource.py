@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 class Resource(BaseModel):
     id: str
+    username: str # Added to align with ResourceReadModel
     type: Literal["resource"]
     title: str
     format: Literal["link", "file", "zettel", "mixed"]

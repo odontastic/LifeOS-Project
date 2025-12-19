@@ -1,6 +1,6 @@
 import uuid
-from typing import List, Optional, Literal
-from datetime import datetime
+from typing import List, Optional, Literal, Dict, Any
+from datetime import datetime, timezone
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -42,6 +42,48 @@ class ZettelUpdate(BaseModel):
     horizon: Optional[Literal["none", "vision", "goals", "principles"]] = None
     contexts: Optional[List[str]] = None
     # username should not be updatable by request body
+
+# Base Project model, representing the full state of a Project
+class Project(BaseModel):
+    id: str
+    username: str
+    type: Literal["project"]
+    title: str
+    desired_outcome: str
+    why_it_matters: str
+    success_criteria: List[str] = Field(default_factory=list)
+    next_actions: List[str] = Field(default_factory=list)
+    status: str
+    area: Optional[str] = None
+    related_zettels: List[str] = Field(default_factory=list)
+    horizon: str
+
+# Model for creating a new Project (does not include ID, username)
+class ProjectCreate(BaseModel):
+    type: Literal["project"] = "project"
+    title: str
+    desired_outcome: str
+    why_it_matters: str
+    success_criteria: List[str] = Field(default_factory=list)
+    next_actions: List[str] = Field(default_factory=list)
+    status: str = "active"
+    area: Optional[str] = None
+    related_zettels: List[str] = Field(default_factory=list)
+    horizon: str = "goals"
+
+# Model for updating an existing Project (all fields optional, except id for consistency)
+class ProjectUpdate(BaseModel):
+    id: str # ID is required for update
+    type: Optional[Literal["project"]] = None
+    title: Optional[str] = None
+    desired_outcome: Optional[str] = None
+    why_it_matters: Optional[str] = None
+    success_criteria: Optional[List[str]] = None
+    next_actions: Optional[List[str]] = None
+    status: Optional[str] = None
+    area: Optional[str] = None
+    related_zettels: Optional[List[str]] = None
+    horizon: Optional[str] = None
 
 class EmotionEntry(BaseModel):
     id: UUID = Field(default_factory=uuid.uuid4)
@@ -99,6 +141,9 @@ class ContactCreatedEvent(BaseModel):
     last_interaction: Optional[datetime] = None
     timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
 
+class ContactDeletedEvent(BaseModel):
+    contact_id: UUID
+
 class TaskItem(BaseModel):
     id: UUID = Field(default_factory=uuid.uuid4)
     title: str
@@ -124,6 +169,30 @@ class KnowledgeNode(BaseModel):
     tags: Optional[List[str]] = None
     related_nodes: Optional[List[UUID]] = None
 
+class NodeCreatedEvent(BaseModel):
+    node_id: str
+    text: str
+    metadata: Dict[str, Any]
+    collection_name: str
+
+class EdgeCreatedEvent(BaseModel):
+    from_node_id: str
+    to_node_id: str
+    label: str
+    properties: Dict[str, Any]
+    from_collection: str
+    to_collection: str
+    edge_collection_name: str
+
+class KnowledgeNodeEvent(BaseModel):
+    id: UUID
+    title: str
+    content: str
+    node_type: str
+    tags: Optional[List[str]] = None
+    related_nodes: Optional[List[UUID]] = None
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
+
 class SystemInsight(BaseModel):
     id: UUID = Field(default_factory=uuid.uuid4)
     timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
@@ -143,6 +212,11 @@ class SystemInsightFeedbackEvent(BaseModel):
     feedback_rating: int
     feedback_comment: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
+
+class RelationLoggedEvent(BaseModel):
+    contact_id: UUID
+    interaction_date: Optional[datetime] = Field(default_factory=datetime.now(timezone.utc))
+    notes: Optional[str] = None
 
 class RelationLogRequest(BaseModel):
     contact_id: UUID
