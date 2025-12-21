@@ -144,7 +144,7 @@ This document defines the **rules, boundaries, and safety protocols** for all ag
 ## 9. Documentation Updates
 
 - **Updates:**  
-  - Agents must update relevant documentation (README, AGENTS.md, GEMINI.md) whenever making significant changes or adding new features.
+  - Agents must update relevant documentation (README, AGENTS.md, GEMINI.md and all /governance files) whenever making significant changes or adding new features.
 
 - **Version Control:**  
   - Ensure all documentation changes are committed and versioned.

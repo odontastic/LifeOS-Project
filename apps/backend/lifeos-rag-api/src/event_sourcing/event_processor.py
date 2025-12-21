@@ -1,14 +1,11 @@
-import os
 import json
 from datetime import datetime
-from typing import Dict, Any, Type, List, Optional, AsyncGenerator
+from typing import Dict, Any, Type, List, Optional
 from pydantic import BaseModel
 
 from arango.database import StandardDatabase
 from qdrant_client import QdrantClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from dotenv import load_dotenv
 import logging
 
 from event_sourcing.event_store import EventStore
@@ -30,7 +27,10 @@ from models.journal_entry import JournalEntry
 from models.emotion import Emotion
 from models.belief import Belief
 from models.trigger import Trigger
-from schemas import SystemInsightFeedbackEvent, ContactCreatedEvent, ContactProfile
+from schemas import (
+    SystemInsightFeedbackEvent, ContactProfile,
+    RelationLoggedEvent, NodeCreatedEvent, EdgeCreatedEvent
+)
 from services.qdrant_service import QdrantService
 from services.arangodb_service import ArangoDBService
 
@@ -39,6 +39,12 @@ from services.arangodb_service import ArangoDBService
 logger = logging.getLogger(__name__) # Initialize logger
 
 class EventProcessor:
+    """
+    Phase 3 EventProcessor:
+    - Maintains read models in SQLite (SQLAlchemy) and ArangoDB.
+    - OPERATING CONSTRAINT: Handlers are synchronous and may block the async event loop.
+    - NO DIRECT DB WRITES outside of this processor are permitted in Phase 3.
+    """
     def __init__(self, event_store: EventStore, engine, qdrant_client: QdrantClient, arangodb_db: StandardDatabase):
         self.event_store = event_store
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -86,9 +92,12 @@ class EventProcessor:
             "ContactCreated": ContactProfile, # Map to ContactProfile Pydantic model
             "ContactUpdated": ContactProfile,
             "ContactDeleted": ContactProfile,
-            "KnowledgeNodeCreated": Zettel, # PHASE4: Will have a read model in Phase 4 - used Zettel as placeholder.
-            "KnowledgeNodeUpdated": Zettel, # PHASE4: Will have a read model in Phase 4 - used Zettel as placeholder.
-            "KnowledgeNodeDeleted": Zettel, # PHASE4: Will have a read model in Phase 4 - used Zettel as placeholder.
+            "KnowledgeNodeCreated": Zettel, # PHASE4: Dedicated read model in Phase 4 - currently using Zettel as placeholder.
+            "KnowledgeNodeUpdated": Zettel, # PHASE4: Dedicated read model in Phase 4 - currently using Zettel as placeholder.
+            "KnowledgeNodeDeleted": Zettel, # PHASE4: Dedicated read model in Phase 4 - currently using Zettel as placeholder.
+            "RelationLogged": RelationLoggedEvent,
+            "NodeCreated": NodeCreatedEvent,
+            "EdgeCreated": EdgeCreatedEvent,
         }
 
 
@@ -134,6 +143,9 @@ class EventProcessor:
             "KnowledgeNodeCreated": self._handle_knowledge_node_created, # PHASE4: Stub handler
             "KnowledgeNodeUpdated": self._handle_knowledge_node_updated, # PHASE4: Stub handler
             "KnowledgeNodeDeleted": self._handle_knowledge_node_deleted, # PHASE4: Stub handler
+            "RelationLogged": self._handle_relation_logged,
+            "NodeCreated": self._handle_node_created,
+            "EdgeCreated": self._handle_edge_created,
         }
 
     def _get_db(self) -> Session:
@@ -154,6 +166,8 @@ class EventProcessor:
                 raise
             finally:
                 db.close() # Explicitly close session
+        else:
+            logger.warning(f"[Phase 3][N/A] No handler found for event type: {event.event_type} — ignored", extra={"event_id": event.event_id, "event_type": event.event_type, "phase": 3, "outcome": "ignored"})
 
     def replay_events(self):
         """Fetches all events from the event store and applies them to rebuild the read models."""
@@ -185,226 +199,326 @@ class EventProcessor:
     
     # --- KnowledgeNode Stub Handlers (PHASE4: Replace with real persistence) ---
     def _handle_knowledge_node_created(self, db: Session, payload: Dict[str, Any]):
-        # PHASE4: Replace stub with real read model persistence
-        logger.info(f"Phase3 stub: KnowledgeNodeCreated received for ID {payload.get('id')}; no read model persisted", extra={"event_id": payload.get('id')})
+        # PHASE4: Read models implemented in Phase 4 - Replace stub with real read model persistence
+        logger.info(f"[Phase 3][STUB] KnowledgeNodeCreated received for ID {payload.get('id')} — no persistence", extra={"event_id": payload.get('id'), "handler_mode": "STUB", "phase": 3, "outcome": "processed"})
 
     def _handle_knowledge_node_updated(self, db: Session, payload: Dict[str, Any]):
-        # PHASE4: Replace stub with real read model persistence
-        logger.info(f"Phase3 stub: KnowledgeNodeUpdated received for ID {payload.get('id')}; no read model persisted", extra={"event_id": payload.get('id')})
+        # PHASE4: Read models implemented in Phase 4 - Replace stub with real read model persistence
+        logger.info(f"[Phase 3][STUB] KnowledgeNodeUpdated received for ID {payload.get('id')} — no persistence", extra={"event_id": payload.get('id'), "handler_mode": "STUB", "phase": 3, "outcome": "processed"})
 
     def _handle_knowledge_node_deleted(self, db: Session, payload: Dict[str, Any]):
-        # PHASE4: Replace stub with real read model persistence
-        logger.info(f"Phase3 stub: KnowledgeNodeDeleted received for ID {payload.get('id')}; no read model persisted", extra={"event_id": payload.get('id')})
+        # PHASE4: Read models implemented in Phase 4 - Replace stub with real read model persistence.
+        # NOTE: Emission for KnowledgeNodeDeleted is deferred to Phase 4.
+        logger.info(f"[Phase 3][STUB] KnowledgeNodeDeleted received for ID {payload.get('id')} — no persistence", extra={"event_id": payload.get('id'), "handler_mode": "STUB", "phase": 3, "outcome": "processed"})
+
+    def _handle_relation_logged(self, db: Session, payload: Dict[str, Any]):
+        # PHASE4: Read models implemented in Phase 4 - Replace stub with real read model persistence
+        logger.info(f"[Phase 3][STUB] RelationLogged received for ID {payload.get('contact_id')} — no persistence", extra={"event_id": payload.get('contact_id'), "handler_mode": "STUB", "phase": 3, "outcome": "processed"})
+
+    def _handle_node_created(self, db: Session, payload: Dict[str, Any]):
+        # PHASE4: Read models implemented in Phase 4 - Replace stub with real ArangoDB persistence
+        logger.info(f"[Phase 3][STUB] NodeCreated received for ID {payload.get('node_id')} — no persistence", extra={"event_id": payload.get('node_id'), "handler_mode": "STUB", "phase": 3, "outcome": "processed"})
+
+    def _handle_edge_created(self, db: Session, payload: Dict[str, Any]):
+        # PHASE4: Read models implemented in Phase 4 - Replace stub with real ArangoDB persistence
+        logger.info(f"[Phase 3][STUB] EdgeCreated received — no persistence", extra={"handler_mode": "STUB", "phase": 3, "outcome": "processed"})
 
     # --- Zettel Handlers ---
     def _handle_zettel_created(self, db: Session, payload: Dict[str, Any]):
         try:
             zettel = ZettelReadModel(**payload) # Pass payload to model constructor
             db.add(zettel)
-            logger.info(f"REAL persist: ZettelCreated - Created ZettelReadModel for ID {zettel.id}", extra={"event_id": zettel.id})
+            logger.info(f"[Phase 3][REAL] ZettelCreated - Created ZettelReadModel for ID {zettel.id} — processed", extra={"event_id": zettel.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating ZettelReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] ZettelCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise # Re-raise to prevent silent failures
 
     def _handle_zettel_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(ZettelReadModel).filter(ZettelReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: ZettelUpdated - Updated ZettelReadModel for ID {payload.get('id')}")
-
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(ZettelReadModel).filter(ZettelReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] ZettelUpdated - Updated ZettelReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] ZettelUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_zettel_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(ZettelReadModel).filter(ZettelReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: ZettelDeleted - Deleted ZettelReadModel for ID {payload.get('id')}")
+        try:
+            db.query(ZettelReadModel).filter(ZettelReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] ZettelDeleted - Deleted ZettelReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] ZettelDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     # --- Project Handlers ---
     def _handle_project_created(self, db: Session, payload: Dict[str, Any]):
         try:
             project = ProjectReadModel(**payload)
             db.add(project)
-            logger.info(f"REAL persist: ProjectCreated - Created ProjectReadModel for ID {project.id}", extra={"event_id": project.id})
+            logger.info(f"[Phase 3][REAL] ProjectCreated - Created ProjectReadModel for ID {project.id} — processed", extra={"event_id": project.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating ProjectReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] ProjectCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_project_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(ProjectReadModel).filter(ProjectReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: ProjectUpdated - Updated ProjectReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(ProjectReadModel).filter(ProjectReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] ProjectUpdated - Updated ProjectReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] ProjectUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_project_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(ProjectReadModel).filter(ProjectReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: ProjectDeleted - Deleted ProjectReadModel for ID {payload.get('id')}")
+        try:
+            db.query(ProjectReadModel).filter(ProjectReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] ProjectDeleted - Deleted ProjectReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] ProjectDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
     
     # --- Area Handlers ---
     def _handle_area_created(self, db: Session, payload: Dict[str, Any]):
         try:
             area = AreaReadModel(**payload)
             db.add(area)
-            logger.info(f"REAL persist: AreaCreated - Created AreaReadModel for ID {area.id}", extra={"event_id": area.id})
+            logger.info(f"[Phase 3][REAL] AreaCreated - Created AreaReadModel for ID {area.id} — processed", extra={"event_id": area.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating AreaReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] AreaCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_area_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(AreaReadModel).filter(AreaReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: AreaUpdated - Updated AreaReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(AreaReadModel).filter(AreaReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] AreaUpdated - Updated AreaReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] AreaUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_area_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(AreaReadModel).filter(AreaReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: AreaDeleted - Deleted AreaReadModel for ID {payload.get('id')}")
+        try:
+            db.query(AreaReadModel).filter(AreaReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] AreaDeleted - Deleted AreaReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] AreaDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
     
     # --- Resource Handlers ---
     def _handle_resource_created(self, db: Session, payload: Dict[str, Any]):
         try:
             resource = ResourceReadModel(**payload)
             db.add(resource)
-            logger.info(f"REAL persist: ResourceCreated - Created ResourceReadModel for ID {resource.id}", extra={"event_id": resource.id})
+            logger.info(f"[Phase 3][REAL] ResourceCreated - Created ResourceReadModel for ID {resource.id} — processed", extra={"event_id": resource.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating ResourceReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] ResourceCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_resource_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(ResourceReadModel).filter(ResourceReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: ResourceUpdated - Updated ResourceReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(ResourceReadModel).filter(ResourceReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] ResourceUpdated - Updated ResourceReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] ResourceUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_resource_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(ResourceReadModel).filter(ResourceReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: ResourceDeleted - Deleted ResourceReadModel for ID {payload.get('id')}")
+        try:
+            db.query(ResourceReadModel).filter(ResourceReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] ResourceDeleted - Deleted ResourceReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] ResourceDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     # --- Task Handlers ---
     def _handle_task_created(self, db: Session, payload: Dict[str, Any]):
         try:
             task = TaskReadModel(**payload)
             db.add(task)
-            logger.info(f"REAL persist: TaskCreated - Created TaskReadModel for ID {task.id}", extra={"event_id": task.id})
+            logger.info(f"[Phase 3][REAL] TaskCreated - Created TaskReadModel for ID {task.id} — processed", extra={"event_id": task.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating TaskReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] TaskCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_task_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(TaskReadModel).filter(TaskReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: TaskUpdated - Updated TaskReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(TaskReadModel).filter(TaskReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] TaskUpdated - Updated TaskReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] TaskUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_task_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(TaskReadModel).filter(TaskReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: TaskDeleted - Deleted TaskReadModel for ID {payload.get('id')}")
+        try:
+            db.query(TaskReadModel).filter(TaskReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] TaskDeleted - Deleted TaskReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] TaskDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
     
     # --- Goal Handlers ---
     def _handle_goal_created(self, db: Session, payload: Dict[str, Any]):
         try:
             goal = GoalReadModel(**payload)
             db.add(goal)
-            logger.info(f"REAL persist: GoalCreated - Created GoalReadModel for ID {goal.id}", extra={"event_id": goal.id})
+            logger.info(f"[Phase 3][REAL] GoalCreated - Created GoalReadModel for ID {goal.id} — processed", extra={"event_id": goal.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating GoalReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] GoalCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_goal_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(GoalReadModel).filter(GoalReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: GoalUpdated - Updated GoalReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(GoalReadModel).filter(GoalReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] GoalUpdated - Updated GoalReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] GoalUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_goal_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(GoalReadModel).filter(GoalReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: GoalDeleted - Deleted GoalReadModel for ID {payload.get('id')}")
+        try:
+            db.query(GoalReadModel).filter(GoalReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] GoalDeleted - Deleted GoalReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] GoalDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
     
     # --- Reflection Handlers ---
     def _handle_reflection_created(self, db: Session, payload: Dict[str, Any]):
         try:
             reflection = ReflectionReadModel(**payload)
             db.add(reflection)
-            logger.info(f"REAL persist: ReflectionCreated - Created ReflectionReadModel for ID {reflection.id}", extra={"event_id": reflection.id})
+            logger.info(f"[Phase 3][REAL] ReflectionCreated - Created ReflectionReadModel for ID {reflection.id} — processed", extra={"event_id": reflection.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating ReflectionReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] ReflectionCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_reflection_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(ReflectionReadModel).filter(ReflectionReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: ReflectionUpdated - Updated ReflectionReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(ReflectionReadModel).filter(ReflectionReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] ReflectionUpdated - Updated ReflectionReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] ReflectionUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_reflection_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(ReflectionReadModel).filter(ReflectionReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: ReflectionDeleted - Deleted ReflectionReadModel for ID {payload.get('id')}")
+        try:
+            db.query(ReflectionReadModel).filter(ReflectionReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] ReflectionDeleted - Deleted ReflectionReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] ReflectionDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
     
     # --- Journal Entry Handlers ---
     def _handle_journal_entry_created(self, db: Session, payload: Dict[str, Any]):
         try:
             journal_entry = JournalEntryReadModel(**payload)
             db.add(journal_entry)
-            logger.info(f"REAL persist: JournalEntryCreated - Created JournalEntryReadModel for ID {journal_entry.id}", extra={"event_id": journal_entry.id})
+            logger.info(f"[Phase 3][REAL] JournalEntryCreated - Created JournalEntryReadModel for ID {journal_entry.id} — processed", extra={"event_id": journal_entry.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating JournalEntryReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] JournalEntryCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_journal_entry_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(JournalEntryReadModel).filter(JournalEntryReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: JournalEntryUpdated - Updated JournalEntryReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(JournalEntryReadModel).filter(JournalEntryReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] JournalEntryUpdated - Updated JournalEntryReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] JournalEntryUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_journal_entry_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(JournalEntryReadModel).filter(JournalEntryReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: JournalEntryDeleted - Deleted JournalEntryReadModel for ID {payload.get('id')}")
+        try:
+            db.query(JournalEntryReadModel).filter(JournalEntryReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] JournalEntryDeleted - Deleted JournalEntryReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] JournalEntryDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
     
     # --- Emotion Handlers ---
     def _handle_emotion_created(self, db: Session, payload: Dict[str, Any]):
         try:
             emotion = EmotionReadModel(**payload)
             db.add(emotion)
-            logger.info(f"REAL persist: EmotionCreated - Created EmotionReadModel for ID {emotion.id}", extra={"event_id": emotion.id})
+            logger.info(f"[Phase 3][REAL] EmotionCreated - Created EmotionReadModel for ID {emotion.id} — processed", extra={"event_id": emotion.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating EmotionReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] EmotionCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_emotion_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(EmotionReadModel).filter(EmotionReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: EmotionUpdated - Updated EmotionReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(EmotionReadModel).filter(EmotionReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] EmotionUpdated - Updated EmotionReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] EmotionUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_emotion_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(EmotionReadModel).filter(EmotionReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: EmotionDeleted - Deleted EmotionReadModel for ID {payload.get('id')}")
+        try:
+            db.query(EmotionReadModel).filter(EmotionReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] EmotionDeleted - Deleted EmotionReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] EmotionDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
     
     # --- Belief Handlers ---
     def _handle_belief_created(self, db: Session, payload: Dict[str, Any]):
         try:
             belief = BeliefReadModel(**payload)
             db.add(belief)
-            logger.info(f"REAL persist: BeliefCreated - Created BeliefReadModel for ID {belief.id}", extra={"event_id": belief.id})
+            logger.info(f"[Phase 3][REAL] BeliefCreated - Created BeliefReadModel for ID {belief.id} — processed", extra={"event_id": belief.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating BeliefReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] BeliefCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_belief_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(BeliefReadModel).filter(BeliefReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: BeliefUpdated - Updated BeliefReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(BeliefReadModel).filter(BeliefReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] BeliefUpdated - Updated BeliefReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] BeliefUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_belief_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(BeliefReadModel).filter(BeliefReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: BeliefDeleted - Deleted BeliefReadModel for ID {payload.get('id')}")
+        try:
+            db.query(BeliefReadModel).filter(BeliefReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] BeliefDeleted - Deleted BeliefReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] BeliefDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
     
     # --- Trigger Handlers ---
     def _handle_trigger_created(self, db: Session, payload: Dict[str, Any]):
         try:
             trigger = TriggerReadModel(**payload)
             db.add(trigger)
-            logger.info(f"REAL persist: TriggerCreated - Created TriggerReadModel for ID {trigger.id}", extra={"event_id": trigger.id})
+            logger.info(f"[Phase 3][REAL] TriggerCreated - Created TriggerReadModel for ID {trigger.id} — processed", extra={"event_id": trigger.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"Error creating TriggerReadModel from payload: {payload}, Error: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] TriggerCreated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             raise
 
     def _handle_trigger_updated(self, db: Session, payload: Dict[str, Any]):
-        payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
-        db.query(TriggerReadModel).filter(TriggerReadModel.id == payload["id"]).update(payload)
-        logger.info(f"REAL persist: TriggerUpdated - Updated TriggerReadModel for ID {payload.get('id')}")
+        try:
+            payload = EventProcessor._convert_str_to_datetime(payload) # Convert datetime strings
+            db.query(TriggerReadModel).filter(TriggerReadModel.id == payload["id"]).update(payload)
+            logger.info(f"[Phase 3][REAL] TriggerUpdated - Updated TriggerReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] TriggerUpdated error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     def _handle_trigger_deleted(self, db: Session, payload: Dict[str, Any]):
-        db.query(TriggerReadModel).filter(TriggerReadModel.id == payload["id"]).delete()
-        logger.info(f"REAL persist: TriggerDeleted - Deleted TriggerReadModel for ID {payload.get('id')}")
+        try:
+            db.query(TriggerReadModel).filter(TriggerReadModel.id == payload["id"]).delete()
+            logger.info(f"[Phase 3][REAL] TriggerDeleted - Deleted TriggerReadModel for ID {payload.get('id')} — processed", extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
+        except Exception as e:
+            logger.error(f"[Phase 3][REAL] TriggerDeleted error for ID {payload.get('id')} — error: {e}", exc_info=True, extra={"event_id": payload.get('id'), "handler_mode": "REAL", "phase": 3, "outcome": "error"})
+            raise
 
     # --- New Event Handlers ---
     def _handle_system_insight_feedback_created(self, db: Session, payload: Dict[str, Any]):
@@ -420,9 +534,9 @@ class EventProcessor:
                 insight_feedback_event.comment,
                 insight_feedback_event.timestamp
             )
-            logger.info(f"ArangoDB: Updated system insight {insight_feedback_event.id}")
+            logger.info(f"[Phase 3][REAL] SystemInsightFeedbackCreated - Updated system insight {insight_feedback_event.id} in ArangoDB — processed", extra={"event_id": insight_feedback_event.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"ArangoDB: Failed to update system insight {insight_feedback_event.id}: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] SystemInsightFeedbackCreated error (ArangoDB) for ID {insight_feedback_event.id} — error: {e}", exc_info=True, extra={"event_id": insight_feedback_event.id, "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             # Depending on requirements, could raise or log and continue
 
         # Update SQLite Read Model
@@ -445,9 +559,9 @@ class EventProcessor:
                 )
                 db.add(new_record)
             db.commit() # Commit changes to SQLite
-            logger.info(f"REAL persist: SystemInsightFeedbackCreated - Updated system insight {insight_feedback_event.id} in SQLite")
+            logger.info(f"[Phase 3][REAL] SystemInsightFeedbackCreated - Updated system insight {insight_feedback_event.id} in SQLite — processed", extra={"event_id": insight_feedback_event.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"SQLite: Failed to update system insight {insight_feedback_event.id}: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] SystemInsightFeedbackCreated error (SQLite) for ID {insight_feedback_event.id} — error: {e}", exc_info=True, extra={"event_id": insight_feedback_event.id, "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             db.rollback() # Rollback transaction if SQLite update fails
             raise
 
@@ -469,9 +583,9 @@ class EventProcessor:
                 contact_profile.created_at,
                 contact_profile.updated_at
             )
-            logger.info(f"REAL persist: ContactCreated - Created/Updated contact {contact_profile.id} in ArangoDB")
+            logger.info(f"[Phase 3][REAL] ContactCreated - Created/Updated contact {contact_profile.id} in ArangoDB — processed", extra={"event_id": contact_profile.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"ArangoDB: Failed to create/update contact {contact_profile.id}: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] ContactCreated error (ArangoDB) for ID {contact_profile.id} — error: {e}", exc_info=True, extra={"event_id": contact_profile.id, "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             # Depending on requirements, could raise or log and continue
 
         # Update SQLite Read Model
@@ -498,19 +612,19 @@ class EventProcessor:
                 )
                 db.add(new_record)
             db.commit() # Commit changes to SQLite
-            logger.info(f"REAL persist: ContactCreated - Created/Updated contact {contact_profile.id} in SQLite")
+            logger.info(f"[Phase 3][REAL] ContactCreated - Created/Updated contact {contact_profile.id} in SQLite — processed", extra={"event_id": contact_profile.id, "handler_mode": "REAL", "phase": 3, "outcome": "processed"})
         except Exception as e:
-            logger.error(f"SQLite: Failed to create/update contact {contact_profile.id}: {e}", exc_info=True)
+            logger.error(f"[Phase 3][REAL] ContactCreated error (SQLite) for ID {contact_profile.id} — error: {e}", exc_info=True, extra={"event_id": contact_profile.id, "handler_mode": "REAL", "phase": 3, "outcome": "error"})
             db.rollback() # Rollback transaction if SQLite update fails
             raise
 
     def _handle_contact_updated(self, db: Session, payload: Dict[str, Any]):
-        # PHASE3: Stub handler - implement actual read model update in Phase 4
-        logger.info(f"Phase3 stub: ContactUpdated received for ID {payload.get('id')}; no read model persisted", extra={"event_id": payload.get('id')})
+        # PHASE4: Read models implemented in Phase 4 - Replace stub with real read model update
+        logger.info(f"[Phase 3][STUB] ContactUpdated received for ID {payload.get('id')} — no persistence", extra={"event_id": payload.get('id'), "handler_mode": "STUB", "phase": 3, "outcome": "processed"})
 
     def _handle_contact_deleted(self, db: Session, payload: Dict[str, Any]):
-        # PHASE3: Stub handler - implement actual read model deletion in Phase 4
-        logger.info(f"Phase3 stub: ContactDeleted received for ID {payload.get('id')}; no read model persisted", extra={"event_id": payload.get('id')})
+        # PHASE4: Read models implemented in Phase 4 - Replace stub with real read model deletion
+        logger.info(f"[Phase 3][STUB] ContactDeleted received for ID {payload.get('id')} — no persistence", extra={"event_id": payload.get('id'), "handler_mode": "STUB", "phase": 3, "outcome": "processed"})
 
 
     # --- Query Methods ---

@@ -18,8 +18,16 @@ class TestEventSourcing(unittest.TestCase):
         self.test_engine = create_engine(f"sqlite:///{self.db_path}")
         Base.metadata.create_all(self.test_engine) # Create all tables from the single Base
 
+        from unittest.mock import MagicMock
+        self.mock_qdrant = MagicMock()
+        self.mock_arango = MagicMock()
         self.event_store = EventStore(engine=self.test_engine)
-        self.event_processor = EventProcessor(self.event_store, engine=self.test_engine)
+        self.event_processor = EventProcessor(
+            self.event_store, 
+            engine=self.test_engine,
+            qdrant_client=self.mock_qdrant,
+            arangodb_db=self.mock_arango
+        )
 
     def tearDown(self):
         Base.metadata.drop_all(bind=self.test_engine)

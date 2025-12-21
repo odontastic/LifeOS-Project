@@ -18,7 +18,7 @@ class QdrantService:
         """Helper to get a QdrantVectorStore instance for a given collection."""
         return QdrantVectorStore(client=self.qdrant_client, collection_name=collection_name)
 
-    async def upsert_vector(self, collection_name: str, doc_id: str, content: str, metadata: Dict[str, Any]):
+    def upsert_vector(self, collection_name: str, doc_id: str, content: str, metadata: Dict[str, Any]):
         """
         Adds or updates a vector in the specified Qdrant collection.
         Requires an embedding model to convert content to vector.
@@ -48,7 +48,7 @@ class QdrantService:
             logger.error(f"Error upserting vector for doc_id '{doc_id}' in collection '{collection_name}': {e}")
             raise # Re-raise to signal failure
 
-    async def delete_vector(self, collection_name: str, doc_id: str):
+    def delete_vector(self, collection_name: str, doc_id: str):
         """Deletes a vector from the specified Qdrant collection."""
         try:
             self.qdrant_client.delete(
@@ -60,10 +60,10 @@ class QdrantService:
             logger.error(f"Error deleting vector for doc_id '{doc_id}' from collection '{collection_name}': {e}")
             raise # Re-raise to signal failure
 
-    async def create_collection_if_not_exists(self, collection_name: str, vector_size: int = 1536, distance: models.Distance = models.Distance.COSINE):
+    def create_collection_if_not_exists(self, collection_name: str, vector_size: int = 1536, distance: models.Distance = models.Distance.COSINE):
         """Ensures a Qdrant collection exists, creates it if not."""
         try:
-            if not self.qdrant_client.collection_exists(collection_name=collection_name).exists:
+            if not self.qdrant_client.collection_exists(collection_name=collection_name):
                 self.qdrant_client.recreate_collection(
                     collection_name=collection_name,
                     vectors_config=models.VectorParams(size=vector_size, distance=distance),

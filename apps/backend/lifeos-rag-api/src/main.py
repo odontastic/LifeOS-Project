@@ -1,4 +1,3 @@
-import os
 import uuid
 import json
 import logging
@@ -7,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, List
 from uuid import UUID
 
-import redis
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,22 +17,17 @@ from sqlalchemy.orm import Session # Import Session for database dependency
 from llama_index.core import Document, VectorStoreIndex
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams # Needed for Qdrant setup if collections are managed
 
 from fastapi_limiter import FastAPILimiter # Import FastAPILimiter
 
-from src.config import (
+from config import (
     NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD,
     QDRANT_URL, ARANGODB_HOST, ARANGODB_DB, ARANGODB_USER, ARANGODB_PASSWORD, QDRANT_API_KEY, QDRANT_GRPC_PORT,
     REDIS_HOST, REDIS_PORT, REDIS_DB,
     ALLOWED_ORIGINS, LOG_LEVEL, ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
-from graph_db import init_lifeos_graph # Import ArangoDB specific functions
-
 from extractor import get_schema_extractor
-
-# from deduplication import deduplicate_and_merge # Temporarily commented out for debugging
 from safety import detect_crisis_language, DEFAULT_DISCLAIMER
 from temporal import parse_time_references
 from reconciliation import DataReconciler # Import DataReconciler
@@ -49,7 +42,11 @@ from database import (
     EmotionReadModel, BeliefReadModel, TriggerReadModel,
     EmotionEntryModel, ContactProfileModel, TaskItemModel, KnowledgeNodeModel, SystemInsightModel
 )
-from src.schemas import EmotionEntry, ContactProfile, ContactUpdatedEvent, TaskItem, TaskStateChangedEvent, KnowledgeNode, SystemInsight, CalmFeedbackRequest, SystemInsightFeedbackEvent, ContactCreatedEvent, ContactDeletedEvent, NodeCreatedEvent, EdgeCreatedEvent, KnowledgeNodeEvent, RelationLoggedEvent # Import Pydantic schemas for entities
+from schemas import (
+    EmotionEntry, ContactProfile, TaskItem, KnowledgeNode, SystemInsight,
+    CalmFeedbackRequest, SystemInsightFeedbackEvent, ContactCreatedEvent, ContactDeletedEvent, NodeCreatedEvent,
+    EdgeCreatedEvent, KnowledgeNodeEvent, RelationLoggedEvent
+) # Import Pydantic schemas for entities
 from crud import create_item, get_item_by_id, get_items, update_item, delete_item, get_db_core_session
 from calm_compass import process_emotion_entry_for_calm_compass, update_calm_compass_model_with_feedback # Import Calm Compass processing
 
@@ -57,7 +54,11 @@ from calm_compass import process_emotion_entry_for_calm_compass, update_calm_com
 from event_sourcing.event_store import EventStore # Import the EventStore class
 from event_sourcing.models import Event as EventPydantic # Import the Event Pydantic model and alias it
 from event_sourcing.event_processor import EventProcessor # Import the EventProcessor class
-from dependencies import initialize_dependencies, get_event_store, get_event_processor, get_qdrant_client, get_arangodb_db
+from dependencies import (
+    initialize_dependencies, get_event_store, get_event_processor, 
+    get_qdrant_client, get_arangodb_db, 
+    event_store_instance, event_processor_instance # Explicitly import instances
+)
 
 
 
@@ -280,14 +281,16 @@ async def log_emotion(emotion_entry: EmotionEntry, db: Session = Depends(get_db)
         schema_version="1.0"
     )
     # Append event to the store
-    event_store_instance.append_event(
+    stored_event = event_store_instance.append_event(
         event_id=emotion_created_event.event_id,
         event_type=emotion_created_event.event_type,
         timestamp=emotion_created_event.timestamp,
         payload=emotion_created_event.payload,
         schema_version=emotion_created_event.schema_version
     )
-    logger.info(f"Emitted EmotionCreated event for emotion_id: {emotion_entry.id}")
+    # Immediately apply event to rebuild/update read model
+    event_processor_instance._apply_event(stored_event)
+    logger.info(f"Emitted and applied EmotionCreated event for emotion_id: {emotion_entry.id}")
     
     # Process the emotion with Calm Compass (now using the original emotion_entry)
     process_emotion_entry_for_calm_compass(db, emotion_entry) # Pass the original Pydantic model
@@ -343,23 +346,31 @@ async def submit_calm_feedback(
     logger.info(f"User '{user.username}' submitting feedback for insight: {feedback.insight_id}")
     
     # Emit SystemInsightFeedbackEvent
-    event_payload_dict = feedback.model_dump(mode='json') # Get dict representation for payload
+    # Align payload: CalmFeedbackRequest(insight_id, rating, comment) -> SystemInsightFeedbackEvent(insight_id, feedback_rating, feedback_comment)
+    feedback_event_payload = SystemInsightFeedbackEvent(
+        insight_id=feedback.insight_id,
+        feedback_rating=feedback.rating,
+        feedback_comment=feedback.comment
+    )
+    event_payload_dict = feedback_event_payload.model_dump(mode='json') # Get dict representation for payload
 
     system_insight_feedback_event = EventPydantic(
         event_id=str(uuid.uuid4()),
-        event_type="SystemInsightFeedback", # A new event type for feedback
+        event_type="SystemInsightFeedbackCreated", # Consistent with EventProcessor
         timestamp=datetime.now(timezone.utc),
         payload=event_payload_dict,
         schema_version="1.0"
     )
-    event_store_instance.append_event(
+    stored_event = event_store_instance.append_event(
         event_id=system_insight_feedback_event.event_id,
         event_type=system_insight_feedback_event.event_type,
         timestamp=system_insight_feedback_event.timestamp,
         payload=system_insight_feedback_event.payload,
         schema_version=system_insight_feedback_event.schema_version
     )
-    logger.info(f"Emitted SystemInsightFeedback event for insight_id: {feedback.insight_id}")
+    # Immediately apply event to rebuild/update read model
+    event_processor_instance._apply_event(stored_event)
+    logger.info(f"Emitted and applied SystemInsightFeedback event for insight_id: {feedback.insight_id}")
     
     # The actual update of SystemInsight will be handled by the EventProcessor.
     # We still need to integrate Feedback Reinforcement Learning for Calm Compass.
@@ -393,14 +404,16 @@ async def log_relation(
         payload=event_payload_dict,
         schema_version="1.0"
     )
-    event_store_instance.append_event(
+    stored_event = event_store_instance.append_event(
         event_id=relation_logged_event.event_id,
         event_type=relation_logged_event.event_type,
         timestamp=relation_logged_event.timestamp,
         payload=relation_logged_event.payload,
         schema_version=relation_logged_event.schema_version
     )
-    logger.info(f"Emitted RelationLogged event for contact id: {relation_log.contact_id}")
+    # Immediately apply event to rebuild/update read model (STUBbed in Phase 3)
+    event_processor_instance._apply_event(stored_event)
+    logger.info(f"Emitted and applied RelationLogged event for contact id: {relation_log.contact_id}")
 
     return {"message": f"Relation interaction log event emitted successfully for contact {relation_log.contact_id}."}
 
@@ -426,14 +439,16 @@ async def sync_task(task_item: TaskItem, db: Session = Depends(get_db), username
         payload=event_payload_dict,
         schema_version="1.0"
     )
-    event_store_instance.append_event(
+    stored_event = event_store_instance.append_event(
         event_id=task_event.event_id,
         event_type=task_event.event_type,
         timestamp=task_event.timestamp,
         payload=task_event.payload,
         schema_version=task_event.schema_version
     )
-    logger.info(f"Emitted {event_type} event for Task id: {task_item.id}")
+    # Immediately apply event to rebuild/update read model
+    event_processor_instance._apply_event(stored_event)
+    logger.info(f"Emitted and applied {event_type} event for Task id: {task_item.id}")
     
     # The response should be the original task_item, as the state is now managed by the event processor
     return task_item
@@ -471,14 +486,16 @@ async def update_para_node(knowledge_node: KnowledgeNode, db: Session = Depends(
     )
     # PHASE4: KnowledgeNodeReadModel will be introduced in Phase 4.
     # Until then, events are validated but not materialized into a dedicated read model.
-    event_store_instance.append_event(
+    stored_event = event_store_instance.append_event(
         event_id=knowledge_node_event.event_id,
         event_type=knowledge_node_event.event_type,
         timestamp=knowledge_node_event.timestamp,
         payload=knowledge_node_event.payload,
         schema_version=knowledge_node_event.schema_version
     )
-    logger.info(f"Emitted {event_type} event for KnowledgeNode id: {knowledge_node.id}")
+    # Immediately apply event to rebuild/update read model (STUBbed in Phase 3)
+    event_processor_instance._apply_event(stored_event)
+    logger.info(f"Emitted and applied {event_type} event for KnowledgeNode id: {knowledge_node.id}")
     
     return knowledge_node
 @app.get("/relation/prompts", response_model=List[str])
@@ -539,14 +556,16 @@ async def create_contact(contact_profile: ContactProfile, db: Session = Depends(
         schema_version="1.0"
     )
     # Append event to the store
-    event_store_instance.append_event(
+    stored_event = event_store_instance.append_event(
         event_id=contact_created_event.event_id,
         event_type=contact_created_event.event_type,
         timestamp=contact_created_event.timestamp,
         payload=contact_created_event.payload,
         schema_version=contact_created_event.schema_version
     )
-    logger.info(f"Emitted ContactCreated event for contact_id: {contact_profile.id}")
+    # Immediately apply event to rebuild/update read model
+    event_processor_instance._apply_event(stored_event)
+    logger.info(f"Emitted and applied ContactCreated event for contact_id: {contact_profile.id}")
     
     return contact_profile
 
@@ -590,14 +609,16 @@ async def update_contact(
         payload=event_payload_dict,
         schema_version="1.0"
     )
-    event_store_instance.append_event(
+    stored_event = event_store_instance.append_event(
         event_id=contact_updated_event.event_id,
         event_type=contact_updated_event.event_type,
         timestamp=contact_updated_event.timestamp,
         payload=contact_updated_event.payload,
         schema_version=contact_updated_event.schema_version
     )
-    logger.info(f"Emitted ContactUpdated event for contact id: {contact_id}")
+    # Immediately apply event to rebuild/update read model (STUBbed in Phase 3)
+    event_processor_instance._apply_event(stored_event)
+    logger.info(f"Emitted and applied ContactUpdated event for contact id: {contact_id}")
     
     return contact_profile
 
@@ -625,13 +646,16 @@ async def delete_contact(contact_id: UUID, db: Session = Depends(get_db), userna
         payload=event_payload_dict,
         schema_version="1.0"
     )
-    event_store_instance.append_event(
+    stored_event = event_store_instance.append_event(
         event_id=contact_deleted_event.event_id,
         event_type=contact_deleted_event.event_type,
         timestamp=contact_deleted_event.timestamp,
         payload=contact_deleted_event.payload,
         schema_version=contact_deleted_event.schema_version
     )
+    # Immediately apply event to rebuild/update read model (STUBbed in Phase 3)
+    event_processor_instance._apply_event(stored_event)
+    logger.info(f"Emitted and applied ContactDeleted event for contact_id: {contact_id}")
     
     return {"message": "ContactProfile deletion event emitted successfully."}
 
@@ -684,13 +708,14 @@ async def ingest_data(request: IngestRequest, db: Session = Depends(get_db), cur
                 metadata=node.metadata,
                 collection_name=collection_name
             )
-            event_store_instance.append_event(
+            stored_event = event_store_instance.append_event(
                 event_id=str(uuid.uuid4()),
                 event_type="NodeCreated",
                 timestamp=datetime.now(timezone.utc),
                 payload=node_created_event_payload.model_dump(mode='json'),
                 schema_version="1.0"
             )
+            event_processor_instance._apply_event(stored_event)
         
         for rel in high_confidence_rels:
             # Determine edge collection name
@@ -708,13 +733,14 @@ async def ingest_data(request: IngestRequest, db: Session = Depends(get_db), cur
                 to_collection="LlamaNodes",   # Assuming this for now
                 edge_collection_name=edge_collection_name
             )
-            event_store_instance.append_event(
+            stored_event = event_store_instance.append_event(
                 event_id=str(uuid.uuid4()),
                 event_type="EdgeCreated",
                 timestamp=datetime.now(timezone.utc),
                 payload=edge_created_event_payload.model_dump(mode='json'),
                 schema_version="1.0"
             )
+            event_processor_instance._apply_event(stored_event)
         end_time = time.time() # End timer
         duration = (end_time - start_time) * 1000 # Duration in ms
         logger.info(f"Ingest request completed in {duration:.2f} ms. Ingested {len(valid_nodes)} nodes and {len(high_confidence_rels)} relationships into ArangoDB.")

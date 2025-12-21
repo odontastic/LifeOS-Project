@@ -51,6 +51,7 @@ async def initialize_dependencies(engine: Engine, qdrant_url: str, qdrant_api_ke
         qdrant_client=_qdrant_client_instance,
         arangodb_db=_arangodb_graph # Pass the initialized ArangoDB database object
     )
+    logger.warning("[Phase 3] EventProcessor initialized with synchronous handlers. These will block the async event loop during execution.")
     event_processor_instance.replay_events()
     logger.info("Event processor replayed all events to build read models in dependencies.")
 

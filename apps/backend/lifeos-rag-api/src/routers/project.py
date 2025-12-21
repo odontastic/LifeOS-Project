@@ -15,6 +15,7 @@ router = APIRouter()
 async def create_project(
     project: Project, 
     event_store: EventStore = Depends(get_event_store),
+    event_processor: EventProcessor = Depends(get_event_processor),
     username: str = Depends(get_current_user)
 ):
     payload = project.model_dump()
@@ -24,12 +25,14 @@ async def create_project(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return project
 
 @router.get("/{project_id}", response_model=Project)
@@ -74,12 +77,14 @@ async def update_project(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return project
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -98,10 +103,12 @@ async def delete_project(
         payload={"id": project_id, "username": username},
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return {"message": "Project deleted successfully"}

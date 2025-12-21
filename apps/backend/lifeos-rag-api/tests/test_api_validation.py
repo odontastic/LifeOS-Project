@@ -25,8 +25,16 @@ class TestAPIValidation(unittest.TestCase):
         Base.metadata.create_all(self.test_engine) # Create all tables from the single Base
         TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.test_engine)
 
+        from unittest.mock import MagicMock
+        self.mock_qdrant = MagicMock()
+        self.mock_arango = MagicMock()
         self.test_event_store = EventStore(engine=self.test_engine)
-        self.test_event_processor = EventProcessor(self.test_event_store, engine=self.test_engine)
+        self.test_event_processor = EventProcessor(
+            self.test_event_store, 
+            engine=self.test_engine,
+            qdrant_client=self.mock_qdrant,
+            arangodb_db=self.mock_arango
+        )
 
         def override_get_event_store():
             return self.test_event_store

@@ -19,6 +19,7 @@ router = APIRouter()
 async def create_trigger(
     trigger: Trigger, 
     event_store: EventStore = Depends(get_event_store),
+    event_processor: EventProcessor = Depends(get_event_processor),
     username: str = Depends(get_current_user)
 ):
     payload = trigger.model_dump()
@@ -28,12 +29,14 @@ async def create_trigger(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return trigger
 
 @router.get("/{trigger_id}", response_model=Trigger)
@@ -78,12 +81,14 @@ async def update_trigger(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return trigger
 
 @router.delete("/{trigger_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -102,10 +107,12 @@ async def delete_trigger(
         payload={"id": trigger_id, "username": username},
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return {"message": "Trigger deleted successfully"}

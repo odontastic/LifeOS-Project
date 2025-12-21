@@ -15,6 +15,7 @@ router = APIRouter()
 async def create_task(
     task: Task, 
     event_store: EventStore = Depends(get_event_store),
+    event_processor: EventProcessor = Depends(get_event_processor),
     username: str = Depends(get_current_user)
 ):
     payload = task.model_dump()
@@ -24,12 +25,14 @@ async def create_task(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return task
 
 @router.get("/{task_id}", response_model=Task)
@@ -74,12 +77,14 @@ async def update_task(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return task
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -98,10 +103,12 @@ async def delete_task(
         payload={"id": task_id, "username": username},
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return {"message": "Task deleted successfully"}

@@ -6,6 +6,7 @@ from auth import get_current_user
 
 
 
+
 from event_sourcing.event_store import EventStore
 from event_sourcing.event_processor import EventProcessor
 from event_sourcing.models import Event as EventPydantic
@@ -18,6 +19,7 @@ router = APIRouter()
 async def create_journal_entry(
     journal_entry: JournalEntry, 
     event_store: EventStore = Depends(get_event_store),
+    event_processor: EventProcessor = Depends(get_event_processor),
     username: str = Depends(get_current_user)
 ):
     payload = journal_entry.model_dump()
@@ -27,12 +29,14 @@ async def create_journal_entry(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return journal_entry
 
 @router.get("/{journal_entry_id}", response_model=JournalEntry)
@@ -77,12 +81,14 @@ async def update_journal_entry(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return journal_entry
 
 @router.delete("/{journal_entry_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -101,10 +107,12 @@ async def delete_journal_entry(
         payload={"id": journal_entry_id, "username": username},
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return {"message": "JournalEntry deleted successfully"}

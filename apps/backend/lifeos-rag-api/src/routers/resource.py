@@ -27,14 +27,14 @@ async def create_resource(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
     # Explicitly apply the event to the EventProcessor to update the read model immediately
-    event_processor._apply_event(event)
+    event_processor._apply_event(stored_event)
     await asyncio.sleep(0.1) # Added a small sleep to allow db to settle 
     return resource
 
@@ -88,12 +88,14 @@ async def update_resource(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return resource
 
 @router.delete("/{resource_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -112,10 +114,12 @@ async def delete_resource(
         payload={"id": resource_id, "username": username},
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return {"message": "Resource deleted successfully"}

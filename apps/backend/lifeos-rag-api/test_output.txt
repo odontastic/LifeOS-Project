@@ -1,0 +1,84 @@
+EEE
+======================================================================
+ERROR: test_api_security (unittest.loader._FailedTest.test_api_security)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_api_security
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/usr/lib/python3.13/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/tests/test_api_security.py", line 8, in <module>
+    from fastapi.testclient import TestClient
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/fastapi/testclient.py", line 1, in <module>
+    from starlette.testclient import TestClient as TestClient  # noqa
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/starlette/testclient.py", line 38, in <module>
+    import httpx
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/httpx/__init__.py", line 2, in <module>
+    from ._api import *
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/httpx/_api.py", line 6, in <module>
+    from ._client import Client
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/httpx/_client.py", line 13, in <module>
+    from ._auth import Auth, BasicAuth, FunctionAuth
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/httpx/_auth.py", line 12, in <module>
+    from ._models import Cookies, Request, Response
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/httpx/_models.py", line 48, in <module>
+    from ._urls import URL
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/httpx/_urls.py", line 9, in <module>
+    from ._urlparse import urlparse
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/.venv/lib/python3.13/site-packages/httpx/_urlparse.py", line 155, in <module>
+    IPv6_STYLE_HOSTNAME = re.compile(r"^\[.*\]$")
+  File "/usr/lib/python3.13/re/__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "/usr/lib/python3.13/re/__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "/usr/lib/python3.13/re/_compiler.py", line 752, in compile
+    code = _code(p, flags)
+  File "/usr/lib/python3.13/re/_compiler.py", line 582, in _code
+    _compile_info(code, p, flags)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/re/_compiler.py", line 530, in _compile_info
+    prefix, prefix_skip, got_all = _get_literal_prefix(pattern, flags)
+                                   ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/re/_compiler.py", line 444, in _get_literal_prefix
+    iscased = _get_iscased(flags)
+  File "/usr/lib/python3.13/re/_compiler.py", line 431, in _get_iscased
+    def _get_iscased(flags):
+    
+KeyboardInterrupt
+
+
+======================================================================
+ERROR: test_api_validation (unittest.loader._FailedTest.test_api_validation)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_api_validation
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/usr/lib/python3.13/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/tests/test_api_validation.py", line 8, in <module>
+    from main import app, get_event_store, get_event_processor, get_db
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/src/main.py", line 39, in <module>
+    from temporal import parse_time_references
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/src/temporal.py", line 3, in <module>
+    import dateparser
+ModuleNotFoundError: No module named 'dateparser'
+
+
+======================================================================
+ERROR: test_event_creation_and_replay (test_event_sourcing.TestEventSourcing.test_event_creation_and_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/austin/Applications/LifeOS-Project/apps/backend/lifeos-rag-api/tests/test_event_sourcing.py", line 22, in setUp
+    self.event_processor = EventProcessor(self.event_store, engine=self.test_engine)
+                           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: EventProcessor.__init__() missing 2 required positional arguments: 'qdrant_client' and 'arangodb_db'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.050s
+
+FAILED (errors=3)

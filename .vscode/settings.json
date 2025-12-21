@@ -1,3 +1,4 @@
 {
-    "markdown.validate.enabled": true
+    "markdown.validate.enabled": true,
+    "editor.fontFamily": "'JetBrains Mono', 'monospace', monospace"
 }

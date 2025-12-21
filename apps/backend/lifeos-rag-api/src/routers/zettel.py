@@ -20,6 +20,7 @@ router = APIRouter()
 async def create_zettel(
     zettel_create: ZettelCreate, # Use ZettelCreate for input
     event_store: EventStore = Depends(get_event_store),
+    event_processor: EventProcessor = Depends(get_event_processor),
     username: str = Depends(get_current_user)
 ):
     new_zettel_id = str(uuid.uuid4())
@@ -40,12 +41,14 @@ async def create_zettel(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return zettel
 
 @router.get("/{zettel_id}", response_model=Zettel)
@@ -99,12 +102,14 @@ async def update_zettel(
         payload=payload,
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return updated_zettel # Return the updated Zettel model
 
 @router.delete("/{zettel_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -124,10 +129,12 @@ async def delete_zettel(
         payload={"id": zettel_id, "username": username},
         event_id=str(uuid.uuid4())
     )
-    event_store.append_event(
+    stored_event = event_store.append_event(
         event_id=event.event_id,
         event_type=event.event_type,
         payload=event.payload,
         schema_version=event.schema_version
     )
+    # Immediately apply event to rebuild/update read model
+    event_processor._apply_event(stored_event)
     return {"message": "Zettel deleted successfully"}
