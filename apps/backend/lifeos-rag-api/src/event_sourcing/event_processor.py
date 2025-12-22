@@ -148,8 +148,17 @@ class EventProcessor:
             "EdgeCreated": self._handle_edge_created,
         }
 
-    def _get_db(self) -> Session:
-        return self.SessionLocal()
+    def _get_db(self):
+        """Context manager for database sessions."""
+        from contextlib import contextmanager
+        @contextmanager
+        def session_scope():
+            db = self.SessionLocal()
+            try:
+                yield db
+            finally:
+                db.close()
+        return session_scope()
 
     def _apply_event(self, event: StoredEvent):
         handler = self.event_handlers.get(event.event_type)
