@@ -1,0 +1,19 @@
+---
+title: "Reflection Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "reflection"]
+---
+
+{
+  "id": "string",
+  "type": "reflection",
+  "body": "string",
+  "insights": ["string"],
+  "generated_zettels": ["string"],
+  "related_areas": ["string"],
+  "related_projects": ["string"],
+  "created_at": "timestamp"
+}

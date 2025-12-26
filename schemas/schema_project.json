@@ -1,0 +1,22 @@
+---
+title: "Project Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "project"]
+---
+
+{
+  "id": "string",
+  "type": "project",
+  "title": "string",
+  "desired_outcome": "string",
+  "why_it_matters": "string",
+  "success_criteria": ["string"],
+  "next_actions": ["string"],
+  "status": "active|paused|done",
+  "area": "string|null",
+  "related_zettels": ["string"],
+  "horizon": "projects"
+}

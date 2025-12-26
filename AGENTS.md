@@ -3,7 +3,7 @@ title: "AI Agent Entry Point"
 type: "Entry Point"
 status: "Active"
 created: "2025-12-12"
-last_updated: "2025-12-14"
+last_updated: "2025-12-15"
 tags: ["agent", "entry-point"]
 ---
 
@@ -18,6 +18,8 @@ This document defines the **rules, boundaries, and safety protocols** for all ag
 ***
 
 ## 2. Guardrail Policy
+- AI agents are implementation assistants, not decision-makers.
+- They may propose, but never ratify, architectural, ethical, or scope changes.
 
 ### 2.1 Hard Constraints
 
@@ -36,7 +38,7 @@ This document defines the **rules, boundaries, and safety protocols** for all ag
 
 - **Architecture:**  
   - All state changes must occur via the **event bus**.  
-  - Never write directly to “tables of record.”  
+  - Never mutate canonical state outside the event log.  
   - Vector stores and graph stores are **derived data** and must be regenerable.
 
 ***
@@ -52,6 +54,16 @@ This document defines the **rules, boundaries, and safety protocols** for all ag
 - **Escape Hatch:**  
   - If something breaks, the agent must **stop and ask for human approval**.  
   - Never invent a workaround or “helpful” extension without explicit permission.
+  
+## Stop Conditions (Mandatory)
+Agents must stop execution immediately if:
+- a user-facing behavior is emotionally ambiguous
+- an insight could be interpreted as diagnosis or prescription
+- multiple invariants conflict
+- data deletion or decay logic is unclear
+- the agent feels the need to "guess" user intent
+
+Stopping is success. Guessing is failure.
 
 ### 3.2 No Improvisation
 
@@ -161,6 +173,14 @@ This document defines the **rules, boundaries, and safety protocols** for all ag
 
 - **No Improvisation:**  
   - Follow the authoritative stack and event-first design.
+  
+## Stop Conditions (Mandatory)
+Agents must stop execution immediately if:
+- a user-facing behavior is emotionally ambiguous
+- an insight could be interpreted as diagnosis or prescription
+- multiple invariants conflict
+- data deletion or decay logic is unclear
+- the agent feels the need to "guess" user intent
 
 This document ensures that LifeOS remains **bold, bounded, and survivable**—a human-centered, locally-run system, not a runaway SaaS startup, research project, or dependency salad.
 

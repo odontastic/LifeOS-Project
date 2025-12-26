@@ -1,11 +1,19 @@
 # LifeOS – Human-Centered Operating System for Life
-
+Modified: 12-24-25
 **Status:** Active Development  
 **License:** (TBD – must allow commercial use, e.g., MIT or similar)  
-
 LifeOS is a **single‑user, local‑first, AI‑enhanced life management system** that acts as a **second brain, reflective coach, and relational compass**. It integrates **BASB/PARA, GTD, and Zettelkasten** with evidence‑based psychology and emotional intelligence, while following strict **agentic AI and licensing constraints** so it can be commercially viable and understandable months or years from now.
-
 ***
+## Document Authority Hierarchy
+
+The following documents are authoritative, in order:
+
+1. LifeOS_Master_Specification_(v1.1).md
+2. LifeOS_Non_Functional_Invariants_(v1.1).md
+3. AGENTS.md
+
+All other documents (README, Design Rationale, ADRs) are explanatory or supportive.
+If a conflict exists, higher-ranked documents override lower-ranked ones.
 
 ## A. Core Purpose
 
@@ -59,6 +67,7 @@ LifeOS is a set of cooperating services connected via an event log:
   PARA + GTD + Zettelkasten integration. Tasks, projects, and notes are linked to emotional state and relationships rather than isolated.
 
 - **AI Insight Layer**  
+  The AI Insight Layer may generate interpretations and recommendations, but must never initiate actions, modify state, or override user intent.
   Local LLM‑powered analysis (via Ollama) using LlamaIndex and LangChain within clear boundaries. Generates summaries, patterns, and recommendations grounded in the user’s own data.
 
 Agent‑specific details (prompting, roles, constraints) live in `AGENTS.md` and `/docs/04_Agent_Guide.md`.
@@ -104,6 +113,10 @@ The following are **out of scope** and must not be implemented in this project:
 
 - Multi‑user SaaS hosting  
 - Mobile‑native apps (iOS / Android)  
+- Mobile-native apps are intentionally out of scope to preserve:
+    - local data control
+    - low notification pressure
+    - deep work over ambient engagement
 - Real‑time collaboration  
 - Payments, billing, subscriptions  
 - Analytics, tracking, telemetry  
@@ -123,6 +136,8 @@ If it feels like a pitch‑deck bullet, it probably does not belong in v1.
 - Offline‑tolerant (only model downloads and optional remote APIs require network)  
 - One user, one active session, low write concurrency  
 - No premature scaling.
+- LifeOS must remain usable and meaningful with zero historical data ("cold start"), without requiring prior journaling, tagging, or model training.
+
 
 ### Event‑First Design
 
@@ -358,11 +373,11 @@ Here’s the updated **README.md** with a new section describing the **agent gui
 
 ## O. Agent Guidelines Overview
 
-LifeOS is designed to be developed and extended by **agentic AI coders**, but only within strict, clearly defined boundaries. This document serves as the **single authoritative master specification** that any agentic coder must follow—ensuring no improvisation in architecture, licensing, or scope.
+LifeOS is designed to be developed and extended by **agentic AI coders**, but only within strict, clearly defined boundaries. 
 
 ### Why This Matters
 
-- **Forces Convergence:** There is exactly one acceptable interpretation of success.  
+- **Forces Convergence:**  
 - **Eliminates Ambiguity:** 80% of future arguments are avoided by:
   - Pinning Python 3.11.x and all dependencies.  
   - Declaring single-user, local-first scope.  
@@ -376,8 +391,6 @@ If the project evolves, the next logical steps are:
 - A **“Hosted Mode Delta”** document (what changes when moving from SQLite to a hosted, multi-user backend).  
 - A **Canonical Event Schema appendix** (pure JSON, zero prose).  
 - A **Prompting Constitution for LifeOS** (separate from the coder’s instructions).
-
-But as-is, this document is YOLO in the good sense: bold, bounded, and survivable—ensuring that LifeOS remains a human-centered, locally-run system, not a runaway SaaS startup, research project, or dependency salad.
 
 ***
 

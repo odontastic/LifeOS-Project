@@ -1,0 +1,21 @@
+---
+title: "Area Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "area"]
+---
+
+{
+  "id": "string",
+  "type": "area",
+  "title": "string",
+  "description": "string",
+  "health_metric": "Stable|Needs Attention",
+  "active_projects": ["string"],
+  "active_tasks": ["string"],
+  "related_resources": ["string"],
+  "related_zettels": ["string"],
+  "horizon": "areas"
+}

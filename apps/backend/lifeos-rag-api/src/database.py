@@ -273,6 +273,10 @@ class SystemInsightModel(Base):
     action_recommendations = Column(Text) # Stored as JSON string
     feedback_rating = Column(Integer) # User feedback rating (e.g., 1-5)
     feedback_comment = Column(Text) # User feedback comment
+    # Decay Profile Fields
+    half_life_days = Column(Integer, nullable=True)
+    decay_start_date = Column(DateTime, nullable=True)
+    last_reaffirmed_date = Column(DateTime, nullable=True)
 
 SystemInsightReadModel = SystemInsightModel # Alias for consistency in EventProcessor
 ContactProfileReadModel = ContactProfileModel # Alias for consistency in EventProcessor

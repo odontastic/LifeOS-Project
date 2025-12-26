@@ -1,0 +1,22 @@
+---
+title: "Task Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "task"]
+---
+
+{
+  "id": "string",
+  "type": "task",
+  "title": "string",
+  "description": "string",
+  "status": "next|waiting|scheduled|done",
+  "due": "timestamp|null",
+  "context": "string",
+  "project": "string|null",
+  "area": "string|null",
+  "related_zettels": ["string"],
+  "horizon": "actions"
+}

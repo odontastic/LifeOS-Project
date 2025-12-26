@@ -1,0 +1,21 @@
+---
+title: "Zettel Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "zettel"]
+---
+
+{
+  "id": "string",
+  "type": "zettel",
+  "title": "string",
+  "body": "string",
+  "created_at": "timestamp",
+  "updated_at": "timestamp",
+  "links": ["string"],
+  "tags": ["string"],
+  "horizon": "none|vision|goals|principles",
+  "contexts": ["string"]
+}

@@ -4,4 +4,4 @@ apps/frontend/LifeOS-Web/node_modules/
 .github/
 repo_scan_index.py
 resources/
-scripts/
+scripts/repo_index.json

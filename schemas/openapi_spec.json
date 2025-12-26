@@ -1,0 +1,450 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "LifeOS PKM API",
+    "version": "1.0.0",
+    "description": "API for managing entities within the LifeOS Personal Knowledge Management system, integrating PARA, GTD, and Zettelkasten principles."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api/v1",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    { "name": "Entities", "description": "Core PKM entities" },
+    { "name": "Queries", "description": "Query operations" },
+    { "name": "Agents", "description": "Agent-driven operations and proposals" }
+  ],
+  "paths": {
+    "/entities/{entityType}": {
+      "get": {
+        "summary": "Retrieve a list of entities",
+        "operationId": "listEntities",
+        "tags": ["Entities", "Queries"],
+        "parameters": [
+          {
+            "name": "entityType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["zettel", "project", "area", "resource", "task", "goal", "reflection"]
+            },
+            "description": "Type of entity to retrieve"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Maximum number of entities to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Offset for pagination"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Full-text search query"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by status (e.g., active, inbox, done)"
+          },
+          {
+            "name": "area",
+            "in": "query",
+            "schema": { "type": "string", "pattern": "^A-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+            "description": "Filter by associated Area ID"
+          },
+          {
+            "name": "project",
+            "in": "query",
+            "schema": { "type": "string", "pattern": "^P-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+            "description": "Filter by associated Project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of entities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      { "$ref": "#/components/schemas/Zettel" },
+                      { "$ref": "#/components/schemas/Project" },
+                      { "$ref": "#/components/schemas/Area" },
+                      { "$ref": "#/components/schemas/Resource" },
+                      { "$ref": "#/components/schemas/Task" },
+                      { "$ref": "#/components/schemas/Goal" },
+                      { "$ref": "#/components/schemas/Reflection" }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new entity",
+        "operationId": "createEntity",
+        "tags": ["Entities"],
+        "parameters": [
+          {
+            "name": "entityType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["zettel", "project", "area", "resource", "task", "goal", "reflection"]
+            },
+            "description": "Type of entity to create"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/Zettel" },
+                  { "$ref": "#/components/schemas/Project" },
+                  { "$ref": "#/components/schemas/Area" },
+                  { "$ref": "#/components/schemas/Resource" },
+                  { "$ref": "#/components/schemas/Task" },
+                  { "$ref": "#/components/schemas/Goal" },
+                  { "$ref": "#/components/schemas/Reflection" }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Entity created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{entityType}/{id}": {
+      "get": {
+        "summary": "Retrieve a single entity by ID",
+        "operationId": "getEntityById",
+        "tags": ["Entities", "Queries"],
+        "parameters": [
+          {
+            "name": "entityType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["zettel", "project", "area", "resource", "task", "goal", "reflection"]
+            },
+            "description": "Type of entity"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "ID of the entity"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entity details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/Zettel" },
+                    { "$ref": "#/components/schemas/Project" },
+                    { "$ref": "#/components/schemas/Area" },
+                    { "$ref": "#/components/schemas/Resource" },
+                    { "$ref": "#/components/schemas/Task" },
+                    { "$ref": "#/components/schemas/Goal" },
+                    { "$ref": "#/components/schemas/Reflection" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update an existing entity by ID",
+        "operationId": "updateEntity",
+        "tags": ["Entities"],
+        "parameters": [
+          {
+            "name": "entityType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["zettel", "project", "area", "resource", "task", "goal", "reflection"]
+            },
+            "description": "Type of entity"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "ID of the entity to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/Zettel" },
+                  { "$ref": "#/components/schemas/Project" },
+                  { "$ref": "#/components/schemas/Area" },
+                  { "$ref": "#/components/schemas/Resource" },
+                  { "$ref": "#/components/schemas/Task" },
+                  { "$ref": "#/components/schemas/Goal" },
+                  { "$ref": "#/components/schemas/Reflection" }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Entity updated successfully" }
+        }
+      },
+      "delete": {
+        "summary": "Delete an entity by ID",
+        "operationId": "deleteEntity",
+        "tags": ["Entities"],
+        "parameters": [
+          {
+            "name": "entityType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["zettel", "project", "area", "resource", "task", "goal", "reflection"]
+            },
+            "description": "Type of entity"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "ID of the entity to delete"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Entity deleted successfully" }
+        }
+      }
+    },
+    "/links": {
+      "post": {
+        "summary": "Create a new link between entities",
+        "operationId": "createLink",
+        "tags": ["Entities"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sourceId", "targetId", "linkType"],
+                "properties": {
+                  "sourceId": { "type": "string" },
+                  "targetId": { "type": "string" },
+                  "linkType": { "type": "string", "description": "Type of relationship (e.g., related, parent, child, has_task)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Link created successfully" }
+        }
+      }
+    },
+    "/links/{sourceId}/{targetId}/{linkType}": {
+      "delete": {
+        "summary": "Remove a link between entities",
+        "operationId": "deleteLink",
+        "tags": ["Entities"],
+        "parameters": [
+          { "name": "sourceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "targetId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "linkType", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Link removed successfully" }
+        }
+      }
+    },
+    "/agents/classify": {
+      "post": {
+        "summary": "Classify raw input and suggest entity type/fields",
+        "operationId": "classifyInput",
+        "tags": ["Agents"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "body", "source"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "body": { "type": "string" },
+                  "source": { "type": "string", "description": "Origin of the input (e.g., mobile, web_clipper, email)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Classification results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["zettel", "task", "project", "resource", "reflection"] },
+                    "confidence": { "type": "number", "format": "float", "minimum": 0, "maximum": 1 },
+                    "suggested_title": { "type": "string" },
+                    "suggested_tags": { "type": "array", "items": { "type": "string" } },
+                    "suggested_area_id": { "type": ["string", "null"] },
+                    "suggested_project_id": { "type": ["string", "null"] },
+                    "actionables": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "desc": { "type": "string" },
+                          "estimate": { "type": "string" },
+                          "context": { "type": "string" },
+                          "energy": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents/propose-project-from-zettel": {
+      "post": {
+        "summary": "Propose a new project from a zettel",
+        "operationId": "proposeProjectFromZettel",
+        "tags": ["Agents"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["zettelId"],
+                "properties": {
+                  "zettelId": { "type": "string", "pattern": "^Z-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Project proposal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "proposal": { "type": "boolean" },
+                    "project": { "$ref": "#/components/schemas/Project" },
+                    "next_actions_suggestions": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Zettel": {
+        "$ref": "#/components/schemas/ZettelSchema"
+      },
+      "Project": {
+        "$ref": "#/components/schemas/ProjectSchema"
+      },
+      "Area": {
+        "$ref": "#/components/schemas/AreaSchema"
+      },
+      "Resource": {
+        "$ref": "#/components/schemas/ResourceSchema"
+      },
+      "Task": {
+        "$ref": "#/components/schemas/TaskSchema"
+      },
+      "Goal": {
+        "$ref": "#/components/schemas/GoalSchema"
+      },
+      "Reflection": {
+        "$ref": "#/components/schemas/ReflectionSchema"
+      },
+      "ZettelSchema": {
+        "$ref": "./schema_zettel.json"
+      },
+      "ProjectSchema": {
+        "$ref": "./schema_project.json"
+      },
+      "AreaSchema": {
+        "$ref": "./schema_area.json"
+      },
+      "ResourceSchema": {
+        "$ref": "./schema_resource.json"
+      },
+      "TaskSchema": {
+        "$ref": "./schema_task.json"
+      },
+      "GoalSchema": {
+        "$ref": "./schema_goal.json"
+      },
+      "ReflectionSchema": {
+        "$ref": "./schema_reflection.json"
+      }
+    }
+  }
+}

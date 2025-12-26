@@ -201,6 +201,10 @@ class SystemInsight(BaseModel):
     action_recommendations: Optional[List[str]] = None
     feedback_rating: Optional[int] = None # 1-5 rating from user
     feedback_comment: Optional[str] = None
+    # Decay Profile Fields
+    half_life_days: Optional[int] = None
+    decay_start_date: Optional[datetime] = None
+    last_reaffirmed_date: Optional[datetime] = None
 
 class CalmFeedbackRequest(BaseModel):
     insight_id: UUID
@@ -211,6 +215,11 @@ class SystemInsightFeedbackEvent(BaseModel):
     insight_id: UUID
     feedback_rating: int
     feedback_comment: Optional[str] = None
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
+
+class InsightDecayedEvent(BaseModel):
+    insight_id: UUID
+    decay_status: float
     timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
 
 class RelationLoggedEvent(BaseModel):

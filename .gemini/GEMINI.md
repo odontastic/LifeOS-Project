@@ -2,13 +2,15 @@
 
 This file provides **authoritative, project-specific instructions** for the Gemini coding agent working inside the LifeOS repository. It complements (and does not replace) `AGENTS.md` and the **LifeOS Agentic AI Coder Master Instructions**.
 
-If instructions conflict, resolve in this order:
+The following documents are authoritative, in order:
 
-1. LifeOS Agentic AI Coder Master Instructions found here: `LifeOS_Agentic_AI_Coder_Master_Instructions.md`
-2. AGENTS.md `AGENTS.md`
-3. This GEMINI.md `/.gemini/GEMINI.md`
+1. /docs/spec/LifeOS_Master_Specification_(v1.1).md
+2. /docs/spec/LifeOS_Non_Functional_Invariants_(v1.1).md
+3. AGENTS.md
+4. This GEMINI.md `/.gemini/GEMINI.md`
 
 ---
+AUTHORITY, SCOPE, CONSTRAINTS — Sections 1–4
 
 ## 1. Project Overview
 
@@ -44,8 +46,15 @@ All code, prompts, and logic MUST conform to:
 3. Supervisor Enforcement Pseudocode
 
 If a conflict exists, Supervisor Enforcement Pseudocode takes precedence.
-
 If unsure, STOP and ask for clarification.
+
+AI agents may propose changes but have no authority to ratify:
+- architectural decisions
+- ethical boundaries
+- scope expansions
+- invariant modifications
+
+All such changes require explicit human approval.
 
 ---
 
@@ -89,6 +98,8 @@ lifeos/
 If the repository deviates, document the deviation.
 
 ---
+
+WORKFLOW Sections — 5-9
 
 ## 5. Installation & Setup
 
@@ -226,6 +237,7 @@ Frontend:
 If a test cannot be written safely, document why.
 
 ---
+SAFETY, ESCALATION, VALUES — Sections 10–14
 
 ## 10. Security & Safety
 

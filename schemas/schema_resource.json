@@ -1,0 +1,19 @@
+---
+title: "Resource Schema"
+type: "Schema"
+status: "Active"
+created: "2025-12-14"
+last_updated: "2025-12-14"
+tags: ["schema", "resource"]
+---
+
+{
+  "id": "string",
+  "type": "resource",
+  "title": "string",
+  "format": "link|file|zettel|mixed",
+  "body": "string",
+  "tags": ["string"],
+  "related_zettels": ["string"],
+  "horizon": "resources"
+}
