@@ -1,6 +1,9 @@
 # LifeOS – Human-Centered Operating System for Life
 Modified: 12-24-25
-**Status:** Active Development  
+
+**Status:** > ⚠️ ARCHIVED — This repository is frozen as a speculative platform experiment.  
+    > Do not extend. Extract lessons only. See ARCHIVE.md.
+
 **License:** (TBD – must allow commercial use, e.g., MIT or similar)  
 LifeOS is a **single‑user, local‑first, AI‑enhanced life management system** that acts as a **second brain, reflective coach, and relational compass**. It integrates **BASB/PARA, GTD, and Zettelkasten** with evidence‑based psychology and emotional intelligence, while following strict **agentic AI and licensing constraints** so it can be commercially viable and understandable months or years from now.
 ***
